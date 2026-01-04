@@ -52,7 +52,7 @@ const features = [
 ];
 
 const stats = [
-  { value: "CEFR", label: "5-7 級", icon: Zap },
+  { value: "TBCL", label: "5-7 級", icon: Zap },
   { value: "20+", label: "核心生詞", icon: Library },
   { value: "13", label: "語法點", icon: BookOpen },
 ];
@@ -265,7 +265,7 @@ const Index = () => {
             <span className="font-serif text-xl font-semibold">矽島的抉擇</span>
           </div>
           <p className="text-primary-foreground/60 text-sm">
-            高階商務華語數位教材 · CEFR Level 5-7
+            高階商務華語數位教材 · TBCL Level 5-7
           </p>
           <p className="text-primary-foreground/40 text-xs mt-4">
             © 2024 高階商務華語教材研發團隊
