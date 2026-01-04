@@ -22,8 +22,8 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-              <Cpu className="w-5 h-5 text-secondary-foreground" />
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-background">
+              <img src="/favicon.png" alt="矽島的抉擇" className="w-full h-full object-contain" />
             </div>
             <div className="hidden sm:block">
               <span className="text-primary-foreground font-serif font-semibold text-lg">

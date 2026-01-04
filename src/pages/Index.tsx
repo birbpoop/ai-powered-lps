@@ -259,8 +259,8 @@ const Index = () => {
       <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-primary text-primary-foreground">
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-              <Cpu className="w-5 h-5 text-secondary-foreground" />
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-background">
+              <img src="/favicon.png" alt="矽島的抉擇" className="w-full h-full object-contain" />
             </div>
             <span className="font-serif text-xl font-semibold">矽島的抉擇</span>
           </div>
