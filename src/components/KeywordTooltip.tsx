@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Volume2 } from "lucide-react";
 
 interface KeywordData {
   word: string;
@@ -7,8 +8,9 @@ interface KeywordData {
   english?: string;
   japanese?: string;
   korean?: string;
+  vietnamese?: string;
   example?: string;
-  imageAlt?: string;
+  partOfSpeech?: string;
 }
 
 interface KeywordTooltipProps {
@@ -18,6 +20,15 @@ interface KeywordTooltipProps {
 
 const KeywordTooltip = ({ keyword, children }: KeywordTooltipProps) => {
   const [isVisible, setIsVisible] = useState(false);
+
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-TW';
+      utterance.rate = 0.8;
+      speechSynthesis.speak(utterance);
+    }
+  };
 
   return (
     <span
@@ -39,46 +50,66 @@ const KeywordTooltip = ({ keyword, children }: KeywordTooltipProps) => {
             className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-3 w-80"
           >
             <div className="bg-card rounded-xl shadow-elevated border border-border overflow-hidden">
-              {/* Image placeholder */}
-              <div className="h-32 bg-muted flex items-center justify-center">
-                <img
-                  src={`https://via.placeholder.com/320x128?text=${encodeURIComponent(keyword.imageAlt || keyword.word)}`}
-                  alt={keyword.imageAlt || keyword.word}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
               <div className="p-4 space-y-3">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <h4 className="font-serif font-semibold text-lg text-foreground">
-                    {keyword.word}
-                  </h4>
-                  {keyword.level && (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-secondary text-secondary-foreground">
-                      Level {keyword.level}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-serif font-semibold text-xl text-foreground">
+                      {keyword.word}
+                    </h4>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        speak(keyword.word);
+                      }}
+                      className="p-1 rounded-full hover:bg-muted transition-colors"
+                      aria-label="發音"
+                    >
+                      <Volume2 className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {keyword.partOfSpeech && (
+                      <span className="text-xs text-muted-foreground italic">
+                        {keyword.partOfSpeech}
+                      </span>
+                    )}
+                    {keyword.level && (
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        keyword.level >= 7 
+                          ? 'bg-navy text-primary-foreground' 
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}>
+                        L{keyword.level}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Definitions */}
-                <div className="space-y-1.5 text-sm">
+                {/* Multilingual Definitions */}
+                <div className="space-y-1.5 text-sm bg-muted/50 rounded-lg p-3">
                   {keyword.english && (
                     <p className="flex gap-2">
-                      <span className="font-medium text-muted-foreground w-8">EN</span>
+                      <span className="font-medium text-navy min-w-[28px]">EN</span>
                       <span className="text-foreground">{keyword.english}</span>
                     </p>
                   )}
                   {keyword.japanese && (
                     <p className="flex gap-2">
-                      <span className="font-medium text-muted-foreground w-8">JP</span>
+                      <span className="font-medium text-navy min-w-[28px]">JP</span>
                       <span className="text-foreground">{keyword.japanese}</span>
                     </p>
                   )}
                   {keyword.korean && (
                     <p className="flex gap-2">
-                      <span className="font-medium text-muted-foreground w-8">KR</span>
+                      <span className="font-medium text-navy min-w-[28px]">KR</span>
                       <span className="text-foreground">{keyword.korean}</span>
+                    </p>
+                  )}
+                  {keyword.vietnamese && (
+                    <p className="flex gap-2">
+                      <span className="font-medium text-navy min-w-[28px]">VN</span>
+                      <span className="text-foreground">{keyword.vietnamese}</span>
                     </p>
                   )}
                 </div>
@@ -86,7 +117,7 @@ const KeywordTooltip = ({ keyword, children }: KeywordTooltipProps) => {
                 {/* Example */}
                 {keyword.example && (
                   <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-1">例句</p>
+                    <p className="text-xs text-muted-foreground mb-1 font-medium">例句</p>
                     <p className="text-sm text-foreground leading-relaxed">
                       {keyword.example}
                     </p>
