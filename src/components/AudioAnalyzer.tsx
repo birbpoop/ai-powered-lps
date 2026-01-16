@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, RotateCcw, Star, Volume2 } from "lucide-react";
+import { Mic, Square, RotateCcw, Star, Volume2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -18,6 +18,7 @@ interface AnalysisResult {
   stars: number;
   metrics: AudioMetrics;
   suggestions: string[];
+  warnings: string[];
 }
 
 interface AudioAnalyzerProps {
@@ -28,8 +29,10 @@ interface AudioAnalyzerProps {
 const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeStep, setAnalyzeStep] = useState<'noise' | 'analyzing'>('noise');
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -45,44 +48,54 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
     }
   };
 
+  const playRecording = () => {
+    if (recordedAudioUrl) {
+      const audio = new Audio(recordedAudioUrl);
+      audio.play();
+    }
+  };
+
   // Simulate Praat analysis based on Python logic
   const simulateAnalysis = useCallback((audioData: Float32Array): AnalysisResult => {
     // Calculate simulated metrics based on audio characteristics
     const rms = Math.sqrt(audioData.reduce((sum, val) => sum + val * val, 0) / audioData.length);
     
-    // Simulate intensity score (40-80 dB is good)
+    // Simulate intensity (dB) - more realistic range
     const meanDb = 20 * Math.log10(Math.max(rms, 0.0001)) + 80;
+    
+    // Generate warnings based on thresholds from Python script
+    const warnings: string[] = [];
+    
     let intensityScore: number;
     if (meanDb < 40) {
       intensityScore = Math.max(0, (meanDb / 40) * 50);
-    } else if (meanDb > 80) {
-      intensityScore = Math.max(50, 100 - (meanDb - 80) * 2);
+      warnings.push("⚠️ Too quiet (音量偏小)");
+    } else if (meanDb > 85) {
+      intensityScore = Math.max(50, 100 - (meanDb - 85) * 3);
+      warnings.push("⚠️ Too loud (音量過大)");
     } else {
-      intensityScore = 50 + ((meanDb - 40) / 40) * 50;
+      intensityScore = 50 + ((meanDb - 40) / 45) * 50;
     }
     intensityScore = Math.min(100, Math.max(0, intensityScore + (Math.random() * 10 - 5)));
 
     // Simulate pitch stability (CV < 5% is excellent, > 20% is poor)
-    const pitchVariation = 5 + Math.random() * 15;
+    const pitchVariation = 5 + Math.random() * 20;
     let pitchScore: number;
     if (pitchVariation < 5) {
       pitchScore = 100;
     } else if (pitchVariation > 20) {
       pitchScore = 50 - Math.min(30, (pitchVariation - 20) * 2);
+      warnings.push("⚠️ Unstable tone (音高不穩)");
     } else {
       pitchScore = 100 - (pitchVariation - 5) * (50 / 15);
     }
     pitchScore = Math.min(100, Math.max(0, pitchScore + (Math.random() * 10 - 5)));
 
-    // Simulate harmonicity (HNR > 15 dB is excellent, < 5 dB is poor)
-    const hnr = 8 + Math.random() * 12;
-    let harmonicityScore: number;
-    if (hnr > 15) {
-      harmonicityScore = 90 + Math.min(10, (hnr - 15) / 5 * 10);
-    } else if (hnr < 5) {
-      harmonicityScore = Math.max(0, (hnr / 5) * 50);
-    } else {
-      harmonicityScore = 50 + ((hnr - 5) / 10) * 40;
+    // Simulate harmonicity (HNR - scale 0-100 for UI, < 60 is poor)
+    const hnrRaw = 40 + Math.random() * 50; // Simulated HNR score 0-100
+    let harmonicityScore: number = hnrRaw;
+    if (hnrRaw < 60) {
+      warnings.push("⚠️ Too much noise/breathiness (雜音/氣息過重)");
     }
     harmonicityScore = Math.min(100, Math.max(0, harmonicityScore + (Math.random() * 10 - 5)));
 
@@ -115,8 +128,11 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
     let clarityLevel: string;
     let stars: number;
     if (overallClarity >= 80) {
-      clarityLevel = "優秀";
+      clarityLevel = "發音優秀";
       stars = 5;
+      if (warnings.length === 0) {
+        warnings.push("🎉 Excellent! (發音優秀)");
+      }
     } else if (overallClarity >= 65) {
       clarityLevel = "良好";
       stars = 4;
@@ -136,7 +152,7 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
       suggestions.push("音量過大，建議適度降低避免失真");
     }
     if (pitchScore < 60) {
-      suggestions.push("音高不夠穩定，建議保持穩定的發音氣息");
+      suggestions.push("音高不夠穩定，建議控制氣息保持穩定");
     }
     if (harmonicityScore < 60) {
       suggestions.push("發音中雜音較多，建議在安靜環境下錄音");
@@ -163,6 +179,7 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
         energyDistribution: Math.round(energyScore),
       },
       suggestions,
+      warnings,
     };
   }, []);
 
@@ -187,18 +204,25 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
 
       mediaRecorderRef.current.onstop = async () => {
         setIsAnalyzing(true);
+        setAnalyzeStep('noise');
+        
+        // Create audio blob for playback
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setRecordedAudioUrl(audioUrl);
         
         // Simulate noise cancellation visual
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        setAnalyzeStep('analyzing');
         
         // Get audio data for analysis
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
         const arrayBuffer = await audioBlob.arrayBuffer();
         const audioBuffer = await audioContextRef.current!.decodeAudioData(arrayBuffer);
         const audioData = audioBuffer.getChannelData(0);
         
         // Simulate analysis
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800));
         const analysisResult = simulateAnalysis(audioData);
         
         setResult(analysisResult);
@@ -244,6 +268,7 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
   const reset = () => {
     setResult(null);
     setIsAnalyzing(false);
+    setRecordedAudioUrl(null);
   };
 
   const renderStars = (count: number) => {
@@ -331,7 +356,9 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
           />
-          <p className="text-muted-foreground">正在分析發音清晰度...</p>
+          <p className="text-muted-foreground font-medium">
+            {analyzeStep === 'noise' ? "Reducing Noise... (降噪處理中...)" : "正在分析發音清晰度..."}
+          </p>
         </div>
       )}
 
@@ -344,6 +371,34 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
             exit={{ opacity: 0, y: -20 }}
             className="space-y-4"
           >
+            {/* Playback Button */}
+            {recordedAudioUrl && (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={playRecording}
+                  className="gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  播放錄音
+                </Button>
+              </div>
+            )}
+
+            {/* Warnings */}
+            {result.warnings.length > 0 && (
+              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                {result.warnings.map((warning, i) => (
+                  <p key={i} className={`text-sm font-medium ${
+                    warning.includes('🎉') ? 'text-secondary' : 'text-amber-600'
+                  }`}>
+                    {warning}
+                  </p>
+                ))}
+              </div>
+            )}
+
             {/* Overall Score */}
             <div className="text-center py-4">
               <div className="flex justify-center gap-1 mb-2">
@@ -360,14 +415,13 @@ const AudioAnalyzer = ({ targetText, onComplete }: AudioAnalyzerProps) => {
               </p>
             </div>
 
-            {/* Metrics */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Key Metrics - Intensity, Pitch, Harmonicity */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground">詳細指標</p>
               {[
-                { label: "音量強度", value: result.metrics.intensity },
-                { label: "音高穩定", value: result.metrics.pitchStability },
-                { label: "諧波比", value: result.metrics.harmonicity },
-                { label: "頻譜清晰", value: result.metrics.spectralClarity },
-                { label: "能量分佈", value: result.metrics.energyDistribution },
+                { label: "Intensity (音量強度)", value: result.metrics.intensity },
+                { label: "Pitch Stability (音高穩定)", value: result.metrics.pitchStability },
+                { label: "Harmonicity (諧波比)", value: result.metrics.harmonicity },
               ].map((metric) => (
                 <div key={metric.label} className="space-y-1">
                   <div className="flex justify-between text-sm">

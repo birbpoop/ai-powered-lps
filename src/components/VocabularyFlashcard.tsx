@@ -20,10 +20,17 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
     }
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't flip if clicking on the speaker button
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+    setIsFlipped(!isFlipped);
+  };
+
   return (
     <div
       className="relative h-64 cursor-pointer perspective-1000"
-      onClick={() => setIsFlipped(!isFlipped)}
+      onClick={handleCardClick}
     >
       <motion.div
         className="absolute inset-0 w-full h-full"
@@ -37,7 +44,7 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
           className="absolute inset-0 w-full h-full rounded-xl bg-card border border-border shadow-card flex flex-col items-center justify-center p-6 backface-hidden"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <div className={`px-3 py-1 text-xs font-medium rounded-full mb-4 ${
+          <div className={`px-3 py-1 text-xs font-medium rounded-full mb-3 ${
             vocabulary.level >= 7 
               ? 'bg-navy text-primary-foreground' 
               : 'bg-secondary text-secondary-foreground'
@@ -45,12 +52,17 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
             TBCL Level {vocabulary.level}
           </div>
           
-          <h3 className="font-serif text-4xl font-bold text-foreground mb-2">
+          <h3 className="font-serif text-4xl font-bold text-foreground mb-1">
             {vocabulary.word}
           </h3>
           
+          {/* Pinyin */}
+          <p className="text-lg text-muted-foreground mb-2">
+            {vocabulary.pinyin}
+          </p>
+          
           {vocabulary.partOfSpeech && (
-            <p className="text-sm text-muted-foreground italic mb-4">
+            <p className="text-sm text-muted-foreground italic mb-3">
               {vocabulary.partOfSpeech}
             </p>
           )}
@@ -76,6 +88,12 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
           <div className="space-y-3">
+            {/* Pinyin on back too */}
+            <div className="text-center pb-2 border-b border-border">
+              <p className="text-lg font-medium text-foreground">{vocabulary.word}</p>
+              <p className="text-sm text-muted-foreground">{vocabulary.pinyin}</p>
+            </div>
+
             {/* Translations */}
             <div className="space-y-2">
               {vocabulary.english && (
