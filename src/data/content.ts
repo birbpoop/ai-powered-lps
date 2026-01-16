@@ -1,5 +1,6 @@
 export interface VocabularyItem {
   word: string;
+  pinyin: string;
   level: number;
   english: string;
   partOfSpeech?: string;
@@ -29,6 +30,7 @@ export interface Reference {
 export const dialogueVocabulary: VocabularyItem[] = [
   {
     word: "論壇",
+    pinyin: "lùntán",
     level: 7,
     english: "Forum",
     partOfSpeech: "Noun",
@@ -39,6 +41,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "秘密",
+    pinyin: "mìmì",
     level: 5,
     english: "Secret",
     partOfSpeech: "Noun / Adj.",
@@ -49,6 +52,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "武器",
+    pinyin: "wǔqì",
     level: 5,
     english: "Weapon",
     partOfSpeech: "Noun",
@@ -59,6 +63,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "產業",
+    pinyin: "chǎnyè",
     level: 5,
     english: "Industry",
     partOfSpeech: "Noun",
@@ -69,6 +74,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "供應鏈",
+    pinyin: "gōngyìngliàn",
     level: 5,
     english: "Supply Chain",
     partOfSpeech: "Noun",
@@ -79,6 +85,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "研發",
+    pinyin: "yánfā",
     level: 5,
     english: "R&D (Research and Development)",
     partOfSpeech: "Verb / Noun",
@@ -89,6 +96,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "碳",
+    pinyin: "tàn",
     level: 7,
     english: "Carbon",
     partOfSpeech: "Noun",
@@ -99,6 +107,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "永續",
+    pinyin: "yǒngxù",
     level: 6,
     english: "Sustainability",
     partOfSpeech: "Noun / Adj.",
@@ -109,6 +118,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "福祉",
+    pinyin: "fúzhǐ",
     level: 7,
     english: "Well-being / Welfare",
     partOfSpeech: "Noun",
@@ -119,6 +129,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "晶片",
+    pinyin: "jīngpiàn",
     level: 7,
     english: "Chip",
     partOfSpeech: "Noun",
@@ -129,6 +140,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "考察",
+    pinyin: "kǎochá",
     level: 6,
     english: "To investigate / inspect",
     partOfSpeech: "Verb",
@@ -139,6 +151,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "過程",
+    pinyin: "guòchéng",
     level: 5,
     english: "Process",
     partOfSpeech: "Noun",
@@ -149,6 +162,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "節能",
+    pinyin: "jiénéng",
     level: 5,
     english: "Energy-saving",
     partOfSpeech: "Noun / Adj.",
@@ -159,6 +173,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "平衡",
+    pinyin: "pínghéng",
     level: 5,
     english: "Balance",
     partOfSpeech: "Verb / Noun",
@@ -169,6 +184,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "再生",
+    pinyin: "zàishēng",
     level: 6,
     english: "Renewable",
     partOfSpeech: "Adj. / Verb",
@@ -179,6 +195,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "面向",
+    pinyin: "miànxiàng",
     level: 5,
     english: "Aspect / Orientation",
     partOfSpeech: "Noun",
@@ -189,6 +206,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "廠商",
+    pinyin: "chǎngshāng",
     level: 5,
     english: "Manufacturer / Vendor",
     partOfSpeech: "Noun",
@@ -199,6 +217,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "觀點",
+    pinyin: "guāndiǎn",
     level: 5,
     english: "Viewpoint",
     partOfSpeech: "Noun",
@@ -209,6 +228,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "落伍",
+    pinyin: "luòwǔ",
     level: 5,
     english: "Outdated",
     partOfSpeech: "Adj.",
@@ -219,6 +239,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "一流",
+    pinyin: "yīliú",
     level: 5,
     english: "First-class",
     partOfSpeech: "Adj.",
@@ -229,6 +250,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "碳中和",
+    pinyin: "tàn zhōnghé",
     level: 6,
     english: "Carbon neutrality",
     partOfSpeech: "Noun",
@@ -239,6 +261,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "當務之急",
+    pinyin: "dāngwùzhījí",
     level: 7,
     english: "A top priority / urgent matter",
     partOfSpeech: "Noun",
@@ -249,6 +272,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "借鏡",
+    pinyin: "jièjìng",
     level: 7,
     english: "To learn from / take as a lesson",
     partOfSpeech: "Verb",
@@ -259,6 +283,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "躍躍欲試",
+    pinyin: "yuèyuèyùshì",
     level: 7,
     english: "Eager to try / Raring to go",
     partOfSpeech: "Adj.",
@@ -269,6 +294,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
   },
   {
     word: "脫穎而出",
+    pinyin: "tuōyǐng'érchū",
     level: 7,
     english: "To stand out from the crowd",
     partOfSpeech: "Verb",
@@ -283,6 +309,7 @@ export const dialogueVocabulary: VocabularyItem[] = [
 export const essayVocabulary: VocabularyItem[] = [
   {
     word: "家喻戶曉",
+    pinyin: "jiāyùhùxiǎo",
     level: 7,
     english: "Widely known / Household name",
     partOfSpeech: "Adj.",
@@ -293,6 +320,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "稱號",
+    pinyin: "chēnghào",
     level: 7,
     english: "Title / Designation",
     partOfSpeech: "Noun",
@@ -303,6 +331,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "力求",
+    pinyin: "lìqiú",
     level: 6,
     english: "Strive for",
     partOfSpeech: "Verb",
@@ -313,6 +342,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "兼顧",
+    pinyin: "jiāngù",
     level: 6,
     english: "Take into account both",
     partOfSpeech: "Verb",
@@ -323,6 +353,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "致力",
+    pinyin: "zhìlì",
     level: 6,
     english: "Devote to",
     partOfSpeech: "Verb",
@@ -333,6 +364,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "圭臬",
+    pinyin: "guīniè",
     level: 7,
     english: "Standard / Guiding principle",
     partOfSpeech: "Noun",
@@ -343,6 +375,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "優勢",
+    pinyin: "yōushì",
     level: 6,
     english: "Advantage",
     partOfSpeech: "Noun",
@@ -353,6 +386,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "乾旱",
+    pinyin: "gānhàn",
     level: 6,
     english: "Drought",
     partOfSpeech: "Noun",
@@ -363,6 +397,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "短缺",
+    pinyin: "duǎnquē",
     level: 6,
     english: "Shortage",
     partOfSpeech: "Noun",
@@ -373,6 +408,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "非同小可",
+    pinyin: "fēitóngxiǎokě",
     level: 7,
     english: "Of great importance / Not trivial",
     partOfSpeech: "Adj.",
@@ -383,6 +419,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "排放",
+    pinyin: "páifàng",
     level: 7,
     english: "Emission",
     partOfSpeech: "Noun / Verb",
@@ -393,6 +430,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "長年",
+    pinyin: "chángnián",
     level: 6,
     english: "For many years",
     partOfSpeech: "Adv.",
@@ -403,6 +441,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "一舉兩得",
+    pinyin: "yījǔliǎngdé",
     level: 6,
     english: "Kill two birds with one stone",
     partOfSpeech: "Idiom",
@@ -413,6 +452,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "氣魄",
+    pinyin: "qìpò",
     level: 7,
     english: "Boldness / Grandeur",
     partOfSpeech: "Noun",
@@ -423,6 +463,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "豐饒",
+    pinyin: "fēngráo",
     level: 7,
     english: "Abundance / Fertility",
     partOfSpeech: "Adj. / Noun",
@@ -433,6 +474,7 @@ export const essayVocabulary: VocabularyItem[] = [
   },
   {
     word: "不二法門",
+    pinyin: "bù'èrfǎmén",
     level: 7,
     english: "The only way / Best approach",
     partOfSpeech: "Noun",
