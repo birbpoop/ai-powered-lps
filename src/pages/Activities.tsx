@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Scale, ShoppingBag, Save, RotateCcw, CheckCircle } from "lucide-react";
+import { Users, Scale, ShoppingBag, Save, RotateCcw, CheckCircle, Mic } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import AudioAnalyzer from "@/components/AudioAnalyzer";
+import ReferencesSection from "@/components/ReferencesSection";
+import { dialogueVocabulary } from "@/data/content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -91,6 +94,9 @@ const Activities = () => {
     });
   };
 
+  // Get sample vocabulary for audio practice
+  const practiceWords = dialogueVocabulary.slice(0, 4);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -111,7 +117,7 @@ const Activities = () => {
               互動式學習活動
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              透過辯論與銷售演練，深化對永續發展議題的理解，筆記會自動儲存至本機
+              透過辯論、銷售演練與AI發音分析，深化對永續發展議題的理解
             </p>
           </motion.div>
 
@@ -122,14 +128,21 @@ const Activities = () => {
             transition={{ delay: 0.1 }}
           >
             <Tabs defaultValue="debate" className="w-full">
-              <TabsList className="w-full grid grid-cols-2 mb-8 h-14">
-                <TabsTrigger value="debate" className="flex items-center gap-2 text-base">
-                  <Scale className="w-5 h-5" />
-                  模擬辯論賽
+              <TabsList className="w-full grid grid-cols-3 mb-8 h-14">
+                <TabsTrigger value="debate" className="flex items-center gap-2 text-sm sm:text-base">
+                  <Scale className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">模擬辯論賽</span>
+                  <span className="sm:hidden">辯論</span>
                 </TabsTrigger>
-                <TabsTrigger value="sales" className="flex items-center gap-2 text-base">
-                  <ShoppingBag className="w-5 h-5" />
-                  王牌銷售員
+                <TabsTrigger value="sales" className="flex items-center gap-2 text-sm sm:text-base">
+                  <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">王牌銷售員</span>
+                  <span className="sm:hidden">銷售</span>
+                </TabsTrigger>
+                <TabsTrigger value="pronunciation" className="flex items-center gap-2 text-sm sm:text-base">
+                  <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">AI 發音教練</span>
+                  <span className="sm:hidden">發音</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -341,8 +354,57 @@ const Activities = () => {
                   </div>
                 </div>
               </TabsContent>
+
+              {/* Pronunciation Activity */}
+              <TabsContent value="pronunciation">
+                <div className="space-y-6">
+                  {/* Instructions */}
+                  <div className="p-6 rounded-2xl bg-muted/50 border border-border">
+                    <h3 className="font-serif text-lg font-semibold text-foreground mb-3">
+                      AI 發音教練
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed mb-4">
+                      錄製您的發音，系統將分析五大指標：<strong>音量強度</strong>、<strong>音高穩定度</strong>、
+                      <strong>諧波噪音比（HNR）</strong>、<strong>頻譜清晰度</strong>與<strong>能量分佈</strong>，
+                      並根據分析結果提供個人化改善建議。
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+                      <div className="p-2 rounded-lg bg-card text-center">
+                        <p className="font-medium text-foreground">音量強度</p>
+                        <p className="text-muted-foreground">15%</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-card text-center">
+                        <p className="font-medium text-foreground">音高穩定</p>
+                        <p className="text-muted-foreground">25%</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-card text-center">
+                        <p className="font-medium text-foreground">諧波比</p>
+                        <p className="text-muted-foreground">30%</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-card text-center">
+                        <p className="font-medium text-foreground">頻譜清晰</p>
+                        <p className="text-muted-foreground">20%</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-card text-center col-span-2 sm:col-span-1">
+                        <p className="font-medium text-foreground">能量分佈</p>
+                        <p className="text-muted-foreground">10%</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Practice Words */}
+                  <div className="grid gap-6">
+                    {practiceWords.map((word) => (
+                      <AudioAnalyzer key={word.word} targetText={word.word} />
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </motion.div>
+
+          {/* References */}
+          <ReferencesSection />
         </div>
       </main>
     </div>

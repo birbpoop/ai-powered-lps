@@ -2,10 +2,12 @@ import { motion } from "framer-motion";
 import { MessageCircle, User, Info, BookOpen } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import KeywordTooltip from "@/components/KeywordTooltip";
+import VocabularyFlashcard from "@/components/VocabularyFlashcard";
 import { dialogueContent, dialogueVocabulary, dialogueGrammar } from "@/data/content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VocabularyItem } from "@/data/content";
 
-const keywordMap: Record<string, typeof dialogueVocabulary[0]> = {};
+const keywordMap: Record<string, VocabularyItem> = {};
 dialogueVocabulary.forEach(v => {
   keywordMap[v.word] = v;
 });
@@ -167,26 +169,9 @@ const Dialogue = () => {
               </TabsList>
               
               <TabsContent value="vocabulary">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {dialogueVocabulary.slice(0, 6).map((vocab, index) => (
-                    <div 
-                      key={index}
-                      className="p-4 rounded-xl bg-card border border-border shadow-card"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-serif text-xl font-bold text-foreground">
-                          {vocab.word}
-                        </span>
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                          vocab.level === 7 
-                            ? 'bg-navy text-primary-foreground' 
-                            : 'bg-secondary text-secondary-foreground'
-                        }`}>
-                          Level {vocab.level}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{vocab.english}</p>
-                    </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {dialogueVocabulary.slice(0, 9).map((vocab, index) => (
+                    <VocabularyFlashcard key={index} vocabulary={vocab} />
                   ))}
                 </div>
               </TabsContent>

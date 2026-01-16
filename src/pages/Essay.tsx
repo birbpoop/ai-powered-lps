@@ -2,10 +2,11 @@ import { motion } from "framer-motion";
 import { FileText, Info, BookOpen } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import KeywordTooltip from "@/components/KeywordTooltip";
-import { essayContent, essayVocabulary, essayGrammar } from "@/data/content";
+import VocabularyFlashcard from "@/components/VocabularyFlashcard";
+import { essayContent, essayVocabulary, essayGrammar, VocabularyItem } from "@/data/content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const keywordMap: Record<string, typeof essayVocabulary[0]> = {};
+const keywordMap: Record<string, VocabularyItem> = {};
 essayVocabulary.forEach(v => {
   keywordMap[v.word] = v;
 });
@@ -120,26 +121,9 @@ const Essay = () => {
               </TabsList>
               
               <TabsContent value="vocabulary">
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {essayVocabulary.map((vocab, index) => (
-                    <div 
-                      key={index}
-                      className="p-4 rounded-xl bg-card border border-border shadow-card"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-serif text-xl font-bold text-foreground">
-                          {vocab.word}
-                        </span>
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                          vocab.level === 7 
-                            ? 'bg-navy text-primary-foreground' 
-                            : 'bg-secondary text-secondary-foreground'
-                        }`}>
-                          Level {vocab.level}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{vocab.english}</p>
-                    </div>
+                    <VocabularyFlashcard key={index} vocabulary={vocab} />
                   ))}
                 </div>
               </TabsContent>
