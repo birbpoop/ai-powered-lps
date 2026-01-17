@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Cpu, BookOpen, FileText, Library, Users, ClipboardCheck } from "lucide-react";
+import { Menu, X, Cpu, BookOpen, FileText, Library, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
@@ -8,8 +8,7 @@ const navItems = [
   { path: "/dialogue", label: "會話篇", icon: BookOpen },
   { path: "/essay", label: "短文篇", icon: FileText },
   { path: "/vocabulary", label: "生詞庫", icon: Library },
-  { path: "/activities", label: "課室活動", icon: Users },
-  { path: "/quiz", label: "自我檢測", icon: ClipboardCheck },
+  { path: "/activities", label: "課堂活動", icon: Users },
 ];
 
 const Navigation = () => {
@@ -23,14 +22,14 @@ const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-background">
-              <img src="/favicon.png" alt="矽島的抉擇" className="w-full h-full object-contain" />
+              <img src="/favicon.png" alt="華語教師備課系統" className="w-full h-full object-contain" />
             </div>
             <div className="hidden sm:block">
               <span className="text-primary-foreground font-serif font-semibold text-lg">
-                矽島的抉擇
+                華語備課系統
               </span>
               <span className="block text-primary-foreground/60 text-xs">
-                高階商務華語
+                TBCL Level 5
               </span>
             </div>
           </Link>

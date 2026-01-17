@@ -39,10 +39,10 @@ const Vocabulary = () => {
               生詞庫
             </div>
             <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground mb-4">
-              核心詞彙庫
+              生詞庫
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              收錄本課程所有 Level 6-7 商務華語核心詞彙，點擊卡片查看詳細釋義
+              點擊卡片查看詳細釋義，點擊喇叭可聽發音
             </p>
           </motion.div>
 

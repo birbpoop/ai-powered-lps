@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, Scale, ShoppingBag, Save, RotateCcw, CheckCircle, Mic } from "lucide-react";
 import Navigation from "@/components/Navigation";
-import AudioAnalyzer from "@/components/AudioAnalyzer";
+import SimplifiedAudioAnalyzer from "@/components/SimplifiedAudioAnalyzer";
 import ReferencesSection from "@/components/ReferencesSection";
 import { dialogueVocabulary } from "@/data/content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -363,39 +363,19 @@ const Activities = () => {
                     <h3 className="font-serif text-lg font-semibold text-foreground mb-3">
                       AI 發音教練
                     </h3>
-                    <p className="text-muted-foreground leading-relaxed mb-4">
-                      錄製您的發音，系統將分析五大指標：<strong>音量強度</strong>、<strong>音高穩定度</strong>、
-                      <strong>諧波噪音比（HNR）</strong>、<strong>頻譜清晰度</strong>與<strong>能量分佈</strong>，
-                      並根據分析結果提供個人化改善建議。
+                    <p className="text-muted-foreground leading-relaxed">
+                      錄製您的發音，系統將分析並顯示準確度評分。
                     </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
-                      <div className="p-2 rounded-lg bg-card text-center">
-                        <p className="font-medium text-foreground">音量強度</p>
-                        <p className="text-muted-foreground">15%</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-card text-center">
-                        <p className="font-medium text-foreground">音高穩定</p>
-                        <p className="text-muted-foreground">25%</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-card text-center">
-                        <p className="font-medium text-foreground">諧波比</p>
-                        <p className="text-muted-foreground">30%</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-card text-center">
-                        <p className="font-medium text-foreground">頻譜清晰</p>
-                        <p className="text-muted-foreground">20%</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-card text-center col-span-2 sm:col-span-1">
-                        <p className="font-medium text-foreground">能量分佈</p>
-                        <p className="text-muted-foreground">10%</p>
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Practice Words */}
+                  {/* Practice Words with Simplified Analyzer */}
                   <div className="grid gap-6">
                     {practiceWords.map((word) => (
-                      <AudioAnalyzer key={word.word} targetText={word.word} />
+                      <SimplifiedAudioAnalyzer 
+                        key={word.word} 
+                        targetText={word.word}
+                        targetPinyin={word.pinyin}
+                      />
                     ))}
                   </div>
                 </div>

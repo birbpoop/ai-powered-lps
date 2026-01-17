@@ -1,63 +1,49 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  BookOpen, 
-  FileText, 
-  Library, 
-  Users, 
-  ClipboardCheck,
+  Upload,
+  FileUp,
   ArrowRight,
-  Cpu,
   Leaf,
-  Zap
+  Cpu,
+  Zap,
+  Library,
+  BookOpen
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 
-const features = [
-  {
-    icon: BookOpen,
-    title: "會話篇",
-    description: "透過情境對話學習高階商務用語",
-    path: "/dialogue",
-    color: "bg-secondary",
-  },
-  {
-    icon: FileText,
-    title: "短文篇",
-    description: "深入探討半導體與永續發展議題",
-    path: "/essay",
-    color: "bg-navy",
-  },
-  {
-    icon: Library,
-    title: "生詞庫",
-    description: "收錄 Level 6-7 核心商務詞彙",
-    path: "/vocabulary",
-    color: "bg-secondary",
-  },
-  {
-    icon: Users,
-    title: "課室活動",
-    description: "模擬辯論與銷售演練互動",
-    path: "/activities",
-    color: "bg-navy",
-  },
-  {
-    icon: ClipboardCheck,
-    title: "自我檢測",
-    description: "線上測驗即時評估學習成效",
-    path: "/quiz",
-    color: "bg-secondary",
-  },
-];
-
 const stats = [
-  { value: "TBCL", label: "5-7 級", icon: Zap },
-  { value: "20+", label: "核心生詞", icon: Library },
+  { value: "TBCL", label: "Level 5", icon: Zap },
+  { value: "40+", label: "核心生詞", icon: Library },
   { value: "13", label: "語法點", icon: BookOpen },
 ];
 
 const Index = () => {
+  const [isDragging, setIsDragging] = useState(false);
+  const navigate = useNavigate();
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    // Simulate file upload and navigate to dashboard
+    navigate("/dashboard");
+  };
+
+  const handleUploadClick = () => {
+    // Simulate file upload and navigate to dashboard
+    navigate("/dashboard");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -76,58 +62,41 @@ const Index = () => {
           >
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 border border-primary-foreground/20 mb-8">
-              <Cpu className="w-4 h-4 text-secondary" />
-              <span className="text-sm text-primary-foreground/80">高階商務華語數位教材</span>
+              <Leaf className="w-4 h-4 text-secondary" />
+              <span className="text-sm text-primary-foreground/80">TBCL Level 5 - Sustainability & Semiconductors</span>
             </div>
 
             {/* Main Title */}
-            <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
-              矽島的抉擇
+            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-primary-foreground mb-4 leading-tight">
+              華語教師備課系統
             </h1>
             
-            <p className="text-xl sm:text-2xl text-primary-foreground/70 max-w-3xl mx-auto mb-4 font-light">
-              在半導體與水田之間
+            <p className="text-lg sm:text-xl text-primary-foreground/70 max-w-2xl mx-auto mb-4">
+              Mandarin Teacher Preparation System
             </p>
             
-            <p className="text-lg text-primary-foreground/60 max-w-2xl mx-auto mb-12">
-              探索台灣科技產業的永續發展挑戰，提升您的高階商務華語能力
+            <p className="text-base text-primary-foreground/60 max-w-xl mx-auto mb-12">
+              TBCL Level 5 - 主題：永續發展與半導體產業
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/dialogue"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-secondary text-secondary-foreground font-medium hover:bg-sage-dark transition-all shadow-glow"
-              >
-                開始學習
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                to="/vocabulary"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-primary-foreground/10 text-primary-foreground border border-primary-foreground/20 font-medium hover:bg-primary-foreground/20 transition-all"
-              >
-                瀏覽生詞庫
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="grid grid-cols-3 gap-6 max-w-2xl mx-auto mt-20"
-          >
-            {stats.map((stat, index) => (
-              <div 
-                key={index}
-                className="text-center p-4 rounded-xl bg-primary-foreground/5 border border-primary-foreground/10"
-              >
-                <stat.icon className="w-6 h-6 text-secondary mx-auto mb-2" />
-                <p className="text-2xl font-serif font-bold text-primary-foreground">{stat.value}</p>
-                <p className="text-sm text-primary-foreground/60">{stat.label}</p>
-              </div>
-            ))}
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-12"
+            >
+              {stats.map((stat, index) => (
+                <div 
+                  key={index}
+                  className="text-center p-3 rounded-xl bg-primary-foreground/5 border border-primary-foreground/10"
+                >
+                  <stat.icon className="w-5 h-5 text-secondary mx-auto mb-1" />
+                  <p className="text-xl font-serif font-bold text-primary-foreground">{stat.value}</p>
+                  <p className="text-xs text-primary-foreground/60">{stat.label}</p>
+                </div>
+              ))}
+            </motion.div>
           </motion.div>
         </div>
 
@@ -142,59 +111,89 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      {/* File Upload Section */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 -mt-8">
+        <div className="max-w-2xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-center mb-8"
           >
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              課程內容
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
+              開始備課
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              系統化的高階商務華語學習模組，涵蓋對話、閱讀、詞彙與實踐
+            <p className="text-muted-foreground">
+              上傳您的課程資料，系統將自動解析並整理成教學模組
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.path}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+          {/* Upload Zone */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className={`relative p-8 sm:p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
+              isDragging
+                ? "border-secondary bg-secondary/10"
+                : "border-border hover:border-secondary/50 hover:bg-muted/50"
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={handleUploadClick}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
+                isDragging ? "bg-secondary" : "bg-muted"
+              }`}>
+                {isDragging ? (
+                  <FileUp className="w-8 h-8 text-secondary-foreground" />
+                ) : (
+                  <Upload className="w-8 h-8 text-muted-foreground" />
+                )}
+              </div>
+              <p className="text-lg font-medium text-foreground mb-2">
+                {isDragging ? "放開以上傳檔案" : "檔案上傳"}
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                拖曳檔案至此處，或點擊選擇檔案
+              </p>
+              <button
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium hover:bg-sage-dark transition-all"
               >
-                <Link
-                  to={feature.path}
-                  className="group block h-full p-6 rounded-2xl bg-card border border-border shadow-card card-hover"
-                >
-                  <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
-                    <feature.icon className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <h3 className="font-serif text-xl font-semibold text-foreground mb-2 group-hover:text-secondary transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {feature.description}
-                  </p>
-                  <div className="mt-4 flex items-center text-secondary font-medium">
-                    進入學習
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                檔案上傳
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-6">
+              支援格式：.docx, .pdf, .txt
+            </p>
+          </motion.div>
+
+          {/* Quick Start */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8 text-center"
+          >
+            <p className="text-sm text-muted-foreground mb-3">
+              或使用預設課程內容
+            </p>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 text-secondary hover:text-secondary/80 font-medium transition-colors"
+            >
+              瀏覽示範課程
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </motion.div>
         </div>
       </section>
 
       {/* About Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-muted/50">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -237,11 +236,6 @@ const Index = () => {
               className="relative"
             >
               <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-navy to-navy-light overflow-hidden shadow-elevated">
-                <img 
-                  src="https://via.placeholder.com/600x450?text=Silicon+Island+Taiwan"
-                  alt="Taiwan semiconductor industry representing Silicon Island"
-                  className="w-full h-full object-cover mix-blend-overlay opacity-60"
-                />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-primary-foreground">
                     <Cpu className="w-16 h-16 mx-auto mb-4 opacity-80" />
@@ -260,12 +254,12 @@ const Index = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-lg overflow-hidden bg-background">
-              <img src="/favicon.png" alt="矽島的抉擇" className="w-full h-full object-contain" />
+              <img src="/favicon.png" alt="華語教師備課系統" className="w-full h-full object-contain" />
             </div>
-            <span className="font-serif text-xl font-semibold">矽島的抉擇</span>
+            <span className="font-serif text-xl font-semibold">華語教師備課系統</span>
           </div>
           <p className="text-primary-foreground/60 text-sm">
-            高階商務華語數位教材 · TBCL Level 5-7
+            Mandarin Teacher Preparation System · TBCL Level 5
           </p>
           <p className="text-primary-foreground/40 text-xs mt-4">
             © 2024 高階商務華語教材研發團隊
