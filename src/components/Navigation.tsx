@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Cpu, MessageSquare, FileText, Library, BookOpen, Users, Home } from "lucide-react";
+import { Menu, X, MessageSquare, FileText, Library, BookOpen, Users, Home, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
   { path: "/", label: "Home", labelZh: "首頁", icon: Home },
   { path: "/dashboard#warmup", label: "Warm-up", labelZh: "暖身", icon: MessageSquare },
-  { path: "/dashboard#content", label: "Content", labelZh: "內容", icon: FileText },
+  { path: "/dialogue", label: "Conversation", labelZh: "會話", icon: MessageCircle },
+  { path: "/essay", label: "Passage", labelZh: "短文", icon: FileText },
   { path: "/vocabulary", label: "Vocabulary", labelZh: "生詞", icon: Library },
   { path: "/dashboard#grammar", label: "Grammar", labelZh: "語法", icon: BookOpen },
   { path: "/activities", label: "Activities", labelZh: "活動", icon: Users },
