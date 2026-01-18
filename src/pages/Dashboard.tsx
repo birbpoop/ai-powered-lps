@@ -5,13 +5,12 @@ import {
   Library, 
   BookOpen, 
   Users,
-  ChevronDown
+  ExternalLink
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import KeywordTooltip from "@/components/KeywordTooltip";
 import VocabularyFlashcard from "@/components/VocabularyFlashcard";
 import SimplifiedAudioAnalyzer from "@/components/SimplifiedAudioAnalyzer";
-import ReferencesSection from "@/components/ReferencesSection";
 import { 
   dialogueContent, 
   dialogueVocabulary, 
@@ -20,7 +19,8 @@ import {
   essayVocabulary,
   essayGrammar,
   VocabularyItem,
-  references
+  dialogueReferences,
+  essayReferences
 } from "@/data/content";
 import {
   Accordion,
@@ -78,6 +78,28 @@ const warmUpQuestions = [
   "如何在科技與環境之間取捨？何者為優先考量？",
 ];
 
+// APA Reference component
+const APAReference = ({ author, year, title, source, url }: { 
+  author: string; 
+  year: string; 
+  title: string; 
+  source?: string;
+  url: string;
+}) => (
+  <p className="text-xs text-muted-foreground leading-relaxed pl-6 -indent-6">
+    {author}. ({year}). <em>{title}</em>.{source && ` ${source}.`}{" "}
+    <a 
+      href={url} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="text-gold hover:text-gold-dark inline-flex items-center gap-1 break-all"
+    >
+      {url.length > 60 ? url.substring(0, 60) + "..." : url}
+      <ExternalLink className="w-3 h-3 shrink-0" />
+    </a>
+  </p>
+);
+
 const Dashboard = () => {
   const practiceWords = dialogueVocabulary.slice(0, 3);
 
@@ -93,22 +115,25 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-sm font-medium mb-4">
+              TBCL Level 5 | Advanced Business Mandarin
+            </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
               課程內容總覽
             </h1>
             <p className="text-muted-foreground">
-              TBCL Level 5 - 永續發展與半導體產業
+              永續發展與半導體產業
             </p>
           </motion.div>
 
           {/* Accordion Sections */}
           <Accordion type="multiple" defaultValue={["warmup"]} className="space-y-4">
             {/* Section 1: Warm-up */}
-            <AccordionItem value="warmup" className="border border-border rounded-xl overflow-hidden bg-card">
+            <AccordionItem value="warmup" id="warmup" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-secondary-foreground" />
+                  <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-navy" />
                   </div>
                   <div className="text-left">
                     <h2 className="font-serif text-lg font-semibold text-foreground">課前暖身</h2>
@@ -117,10 +142,13 @@ const Dashboard = () => {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <ol className="space-y-3 list-decimal list-inside">
+                <ol className="space-y-4">
                   {warmUpQuestions.map((q, i) => (
-                    <li key={i} className="text-foreground leading-relaxed pl-2">
-                      {q}
+                    <li key={i} className="flex gap-3 text-foreground leading-relaxed">
+                      <span className="shrink-0 w-6 h-6 rounded-full bg-gold/10 text-gold text-sm font-medium flex items-center justify-center">
+                        {i + 1}
+                      </span>
+                      <span>{q}</span>
                     </li>
                   ))}
                 </ol>
@@ -128,7 +156,7 @@ const Dashboard = () => {
             </AccordionItem>
 
             {/* Section 2: Content */}
-            <AccordionItem value="content" className="border border-border rounded-xl overflow-hidden bg-card">
+            <AccordionItem value="content" id="content" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center">
@@ -140,17 +168,17 @@ const Dashboard = () => {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6 space-y-8">
+              <AccordionContent className="px-6 pb-6 space-y-10">
                 {/* Block A: Conversation */}
                 <div>
                   <h3 className="font-serif text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-sm">A</span>
+                    <span className="px-2 py-0.5 bg-gold/20 text-gold rounded text-sm font-bold">A</span>
                     會話篇 - {dialogueContent.title}
                   </h3>
-                  <div className="space-y-4 mb-4">
+                  <div className="space-y-4 mb-6">
                     {dialogueContent.lines.slice(0, 6).map((line, index) => (
-                      <div key={index} className="pl-4 border-l-2 border-muted">
-                        <p className="text-sm font-medium text-secondary mb-1">{line.speaker}：</p>
+                      <div key={index} className="pl-4 border-l-2 border-gold/30">
+                        <p className="text-sm font-medium text-gold mb-1">{line.speaker}：</p>
                         <p className="text-foreground leading-relaxed">
                           {highlightKeywords(line.text)}
                         </p>
@@ -158,26 +186,49 @@ const Dashboard = () => {
                     ))}
                     <p className="text-sm text-muted-foreground italic">...（查看完整對話請前往會話篇頁面）</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
-                    <strong>Source:</strong> SEMI Taiwan. (2021, October 7). SEMI ESG Sustainability Initiative Ceremony [Video]. YouTube.
+                  
+                  {/* APA References - Dialogue */}
+                  <div className="p-4 rounded-lg bg-muted/50 border-l-4 border-gold space-y-2">
+                    <p className="text-xs font-semibold text-foreground mb-2">References:</p>
+                    {dialogueReferences.map((ref) => (
+                      <APAReference 
+                        key={ref.id}
+                        author={ref.author}
+                        year={ref.year}
+                        title={ref.title}
+                        source={ref.source}
+                        url={ref.url}
+                      />
+                    ))}
                   </div>
                 </div>
 
                 {/* Block B: Short Passage */}
                 <div>
                   <h3 className="font-serif text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-navy/20 text-navy rounded text-sm">B</span>
+                    <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-sm font-bold">B</span>
                     短文篇 - {essayContent.title}
                   </h3>
-                  <div className="mb-4">
+                  <div className="mb-6">
                     <p className="text-foreground leading-loose indent-8">
                       {highlightKeywords(essayContent.paragraphs[0])}
                     </p>
                     <p className="text-sm text-muted-foreground italic mt-2">...（查看完整短文請前往短文篇頁面）</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground space-y-1">
-                    <p><strong>Source 1:</strong> National Academy for Educational Research. (n.d.). Analysis of solution strategies for biofuel demand inducing food crisis. Research Summary, No. 24.</p>
-                    <p><strong>Source 2:</strong> National Academy for Educational Research. (n.d.). Energy saving and carbon reduction for sustainable life development. Research Summary, No. 43.</p>
+                  
+                  {/* APA References - Essay */}
+                  <div className="p-4 rounded-lg bg-muted/50 border-l-4 border-secondary space-y-2">
+                    <p className="text-xs font-semibold text-foreground mb-2">References:</p>
+                    {essayReferences.map((ref) => (
+                      <APAReference 
+                        key={ref.id}
+                        author={ref.author}
+                        year={ref.year}
+                        title={ref.title}
+                        source={ref.source}
+                        url={ref.url}
+                      />
+                    ))}
                   </div>
                 </div>
               </AccordionContent>
@@ -187,8 +238,8 @@ const Dashboard = () => {
             <AccordionItem value="vocabulary" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                    <Library className="w-4 h-4 text-secondary-foreground" />
+                  <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center">
+                    <Library className="w-4 h-4 text-navy" />
                   </div>
                   <div className="text-left">
                     <h2 className="font-serif text-lg font-semibold text-foreground">生詞庫</h2>
@@ -209,7 +260,7 @@ const Dashboard = () => {
             </AccordionItem>
 
             {/* Section 4: Grammar Points */}
-            <AccordionItem value="grammar" className="border border-border rounded-xl overflow-hidden bg-card">
+            <AccordionItem value="grammar" id="grammar" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center">
@@ -232,11 +283,11 @@ const Dashboard = () => {
                         <span className="font-serif font-bold text-foreground">
                           {grammar.pattern}
                         </span>
-                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-muted text-muted-foreground">
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gold/10 text-gold">
                           Level {grammar.level}
                         </span>
                       </div>
-                      <p className="text-sm text-secondary font-medium mb-1">{grammar.english}</p>
+                      <p className="text-sm text-gold font-medium mb-1">{grammar.english}</p>
                       <p className="text-sm text-muted-foreground">
                         {grammar.example}
                       </p>
@@ -250,8 +301,8 @@ const Dashboard = () => {
             <AccordionItem value="activity" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                    <Users className="w-4 h-4 text-secondary-foreground" />
+                  <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center">
+                    <Users className="w-4 h-4 text-navy" />
                   </div>
                   <div className="text-left">
                     <h2 className="font-serif text-lg font-semibold text-foreground">課堂活動</h2>
@@ -261,10 +312,10 @@ const Dashboard = () => {
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 space-y-6">
                 {/* Activity Description */}
-                <div className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
-                  <h3 className="font-medium text-foreground mb-2">模擬辯論賽</h3>
+                <div className="p-4 rounded-lg bg-gold/10 border border-gold/20">
+                  <h3 className="font-medium text-foreground mb-2">模擬辯論與銷售提案</h3>
                   <p className="text-sm text-muted-foreground">
-                    Simulation Debate: Semiconductors vs. Environment
+                    Simulation Debate & Sales Pitch
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
                     「半導體產業會/不會阻撓環境的發展」
@@ -273,7 +324,10 @@ const Dashboard = () => {
 
                 {/* AI Pronunciation Coach */}
                 <div>
-                  <h3 className="font-medium text-foreground mb-4">AI 發音教練</h3>
+                  <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-xs">AI</span>
+                    發音教練 Pronunciation Coach
+                  </h3>
                   <div className="grid gap-4">
                     {practiceWords.map((word, index) => (
                       <SimplifiedAudioAnalyzer 
@@ -287,11 +341,6 @@ const Dashboard = () => {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-
-          {/* References */}
-          <div className="mt-12">
-            <ReferencesSection />
-          </div>
         </div>
       </main>
     </div>
