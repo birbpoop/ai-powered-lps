@@ -5,8 +5,10 @@ import {
   Library, 
   BookOpen, 
   Users,
-  ExternalLink
+  ExternalLink,
+  MessageCircle
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import KeywordTooltip from "@/components/KeywordTooltip";
 import VocabularyFlashcard from "@/components/VocabularyFlashcard";
@@ -28,6 +30,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 // Create keyword maps
 const allVocabulary = [...dialogueVocabulary, ...essayVocabulary];
@@ -78,7 +86,7 @@ const warmUpQuestions = [
   "如何在科技與環境之間取捨？何者為優先考量？",
 ];
 
-// APA Reference component
+// APA Reference component with hanging indent
 const APAReference = ({ author, year, title, source, url }: { 
   author: string; 
   year: string; 
@@ -86,16 +94,15 @@ const APAReference = ({ author, year, title, source, url }: {
   source?: string;
   url: string;
 }) => (
-  <p className="text-xs text-muted-foreground leading-relaxed pl-6 -indent-6">
+  <p className="text-xs text-muted-foreground leading-relaxed pl-8 -indent-8 mb-2">
     {author}. ({year}). <em>{title}</em>.{source && ` ${source}.`}{" "}
     <a 
       href={url} 
       target="_blank" 
       rel="noopener noreferrer"
-      className="text-gold hover:text-gold-dark inline-flex items-center gap-1 break-all"
+      className="text-gold hover:text-gold-dark break-all"
     >
-      {url.length > 60 ? url.substring(0, 60) + "..." : url}
-      <ExternalLink className="w-3 h-3 shrink-0" />
+      {url}
     </a>
   </p>
 );
@@ -155,7 +162,7 @@ const Dashboard = () => {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Section 2: Content */}
+            {/* Section 2: Content - Using Tabs */}
             <AccordionItem value="content" id="content" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
@@ -164,73 +171,115 @@ const Dashboard = () => {
                   </div>
                   <div className="text-left">
                     <h2 className="font-serif text-lg font-semibold text-foreground">內容</h2>
-                    <p className="text-sm text-muted-foreground">Dialogue & Short Passage</p>
+                    <p className="text-sm text-muted-foreground">Conversation & Short Passage</p>
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6 space-y-10">
-                {/* Block A: Conversation */}
-                <div>
-                  <h3 className="font-serif text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-gold/20 text-gold rounded text-sm font-bold">A</span>
-                    會話篇 - {dialogueContent.title}
-                  </h3>
-                  <div className="space-y-4 mb-6">
-                    {dialogueContent.lines.slice(0, 6).map((line, index) => (
-                      <div key={index} className="pl-4 border-l-2 border-gold/30">
-                        <p className="text-sm font-medium text-gold mb-1">{line.speaker}：</p>
-                        <p className="text-foreground leading-relaxed">
-                          {highlightKeywords(line.text)}
-                        </p>
+              <AccordionContent className="px-6 pb-6">
+                {/* Tabs for Conversation / Short Passage */}
+                <Tabs defaultValue="conversation" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="conversation" className="gap-2">
+                      <MessageCircle className="w-4 h-4" />
+                      會話篇
+                    </TabsTrigger>
+                    <TabsTrigger value="passage" className="gap-2">
+                      <FileText className="w-4 h-4" />
+                      短文篇
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Tab A: Conversation */}
+                  <TabsContent value="conversation" className="mt-0">
+                    <div className="rounded-xl border border-gold/20 bg-gold/5 p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="px-3 py-1 bg-gold text-navy rounded-full text-sm font-bold">A</span>
+                        <h3 className="font-serif text-lg font-semibold text-foreground">
+                          會話篇 - {dialogueContent.title}
+                        </h3>
                       </div>
-                    ))}
-                    <p className="text-sm text-muted-foreground italic">...（查看完整對話請前往會話篇頁面）</p>
-                  </div>
+                      
+                      <div className="space-y-4 mb-6">
+                        {dialogueContent.lines.slice(0, 8).map((line, index) => (
+                          <div key={index} className="pl-4 border-l-2 border-gold/40">
+                            <p className="text-sm font-medium text-gold mb-1">{line.speaker}：</p>
+                            <p className="text-foreground leading-relaxed">
+                              {highlightKeywords(line.text)}
+                            </p>
+                          </div>
+                        ))}
+                        <div className="text-center py-4">
+                          <Link 
+                            to="/dialogue" 
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/10 text-gold hover:bg-gold/20 transition-colors text-sm font-medium"
+                          >
+                            查看完整對話
+                            <ExternalLink className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      </div>
+                      
+                      {/* APA References - Conversation */}
+                      <div className="p-4 rounded-lg bg-background border-l-4 border-gold">
+                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">References</p>
+                        {dialogueReferences.map((ref) => (
+                          <APAReference 
+                            key={ref.id}
+                            author={ref.author}
+                            year={ref.year}
+                            title={ref.title}
+                            source={ref.source}
+                            url={ref.url}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
                   
-                  {/* APA References - Dialogue */}
-                  <div className="p-4 rounded-lg bg-muted/50 border-l-4 border-gold space-y-2">
-                    <p className="text-xs font-semibold text-foreground mb-2">References:</p>
-                    {dialogueReferences.map((ref) => (
-                      <APAReference 
-                        key={ref.id}
-                        author={ref.author}
-                        year={ref.year}
-                        title={ref.title}
-                        source={ref.source}
-                        url={ref.url}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Block B: Short Passage */}
-                <div>
-                  <h3 className="font-serif text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-sm font-bold">B</span>
-                    短文篇 - {essayContent.title}
-                  </h3>
-                  <div className="mb-6">
-                    <p className="text-foreground leading-loose indent-8">
-                      {highlightKeywords(essayContent.paragraphs[0])}
-                    </p>
-                    <p className="text-sm text-muted-foreground italic mt-2">...（查看完整短文請前往短文篇頁面）</p>
-                  </div>
-                  
-                  {/* APA References - Essay */}
-                  <div className="p-4 rounded-lg bg-muted/50 border-l-4 border-secondary space-y-2">
-                    <p className="text-xs font-semibold text-foreground mb-2">References:</p>
-                    {essayReferences.map((ref) => (
-                      <APAReference 
-                        key={ref.id}
-                        author={ref.author}
-                        year={ref.year}
-                        title={ref.title}
-                        source={ref.source}
-                        url={ref.url}
-                      />
-                    ))}
-                  </div>
-                </div>
+                  {/* Tab B: Short Passage */}
+                  <TabsContent value="passage" className="mt-0">
+                    <div className="rounded-xl border border-secondary/20 bg-secondary/5 p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm font-bold">B</span>
+                        <h3 className="font-serif text-lg font-semibold text-foreground">
+                          短文篇 - {essayContent.title}
+                        </h3>
+                      </div>
+                      
+                      <div className="mb-6 space-y-4">
+                        {essayContent.paragraphs.slice(0, 2).map((para, index) => (
+                          <p key={index} className="text-foreground leading-loose indent-8">
+                            {highlightKeywords(para)}
+                          </p>
+                        ))}
+                        <div className="text-center py-4">
+                          <Link 
+                            to="/essay" 
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors text-sm font-medium"
+                          >
+                            查看完整短文
+                            <ExternalLink className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      </div>
+                      
+                      {/* APA References - Passage */}
+                      <div className="p-4 rounded-lg bg-background border-l-4 border-secondary">
+                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">References</p>
+                        {essayReferences.map((ref) => (
+                          <APAReference 
+                            key={ref.id}
+                            author={ref.author}
+                            year={ref.year}
+                            title={ref.title}
+                            source={ref.source}
+                            url={ref.url}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </AccordionContent>
             </AccordionItem>
 
@@ -248,14 +297,23 @@ const Dashboard = () => {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
+                <p className="text-sm text-muted-foreground mb-4">
+                  點擊 🔊 收聽標準發音 · 點擊卡片翻轉查看翻譯
+                </p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allVocabulary.slice(0, 9).map((vocab, index) => (
                     <VocabularyFlashcard key={index} vocabulary={vocab} />
                   ))}
                 </div>
-                <p className="text-sm text-muted-foreground mt-4 text-center">
-                  前往生詞庫頁面查看全部 {allVocabulary.length} 個詞彙
-                </p>
+                <div className="text-center mt-6">
+                  <Link 
+                    to="/vocabulary"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/10 text-gold hover:bg-gold/20 transition-colors text-sm font-medium"
+                  >
+                    查看全部 {allVocabulary.length} 個詞彙
+                    <ExternalLink className="w-4 h-4" />
+                  </Link>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
