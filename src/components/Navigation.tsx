@@ -1,27 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Cpu, BookOpen, FileText, Library, Users } from "lucide-react";
+import { Menu, X, Cpu, MessageSquare, FileText, Library, BookOpen, Users, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
-  { path: "/", label: "首頁", icon: Cpu },
-  { path: "/dialogue", label: "會話篇", icon: BookOpen },
-  { path: "/essay", label: "短文篇", icon: FileText },
-  { path: "/vocabulary", label: "生詞庫", icon: Library },
-  { path: "/activities", label: "課堂活動", icon: Users },
+  { path: "/", label: "Home", labelZh: "首頁", icon: Home },
+  { path: "/dashboard#warmup", label: "Warm-up", labelZh: "暖身", icon: MessageSquare },
+  { path: "/dashboard#content", label: "Content", labelZh: "內容", icon: FileText },
+  { path: "/vocabulary", label: "Vocabulary", labelZh: "生詞", icon: Library },
+  { path: "/dashboard#grammar", label: "Grammar", labelZh: "語法", icon: BookOpen },
+  { path: "/activities", label: "Activities", labelZh: "活動", icon: Users },
 ];
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const isHome = location.pathname === "/";
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/95 backdrop-blur-md border-b border-primary-foreground/10">
+    <nav 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled || !isHome
+          ? "bg-primary/95 backdrop-blur-md border-b border-primary-foreground/10 shadow-lg"
+          : "bg-transparent"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-background">
+            <div className={`w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center transition-all ${
+              isScrolled || !isHome ? "bg-background" : "bg-background/20 backdrop-blur-sm"
+            }`}>
               <img src="/favicon.png" alt="華語教師備課系統" className="w-full h-full object-contain" />
             </div>
             <div className="hidden sm:block">
@@ -37,25 +58,27 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname === item.path || 
+                (item.path.includes("#") && location.pathname === "/dashboard");
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "text-secondary bg-primary-foreground/10"
+                      ? "text-gold bg-primary-foreground/10"
                       : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/5"
                   }`}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-1.5">
                     <item.icon className="w-4 h-4" />
-                    {item.label}
+                    <span className="hidden xl:inline">{item.labelZh}</span>
+                    <span className="xl:hidden">{item.label}</span>
                   </span>
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute bottom-0 left-2 right-2 h-0.5 bg-secondary rounded-full"
+                      className="absolute bottom-0 left-2 right-2 h-0.5 bg-gold rounded-full"
                     />
                   )}
                 </Link>
@@ -92,12 +115,13 @@ const Navigation = () => {
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                       isActive
-                        ? "bg-secondary text-secondary-foreground"
+                        ? "bg-gold text-navy"
                         : "text-primary-foreground/80 hover:bg-primary-foreground/10"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
-                    {item.label}
+                    {item.labelZh}
+                    <span className="text-sm opacity-60">({item.label})</span>
                   </Link>
                 );
               })}

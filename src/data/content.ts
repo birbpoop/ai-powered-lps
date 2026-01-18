@@ -669,38 +669,61 @@ export const essayContent = {
   ],
 };
 
-// 參考文獻
-export const references: Reference[] = [
+// 參考文獻 - 會話篇
+export const dialogueReferences: Reference[] = [
   {
-    id: "1",
+    id: "d1",
     author: "SEMI Taiwan",
     year: "2021",
-    title: "SEMI半導體產業ESG永續倡議行動儀式",
+    title: "SEMI ESG Sustainability Initiative Ceremony [Video]",
     source: "YouTube",
-    url: "https://www.youtube.com/live/ZJvt8R31RqI?si=qnHL7LqYl5ZPTaHF",
+    url: "https://www.youtube.com/live/ZJvt8R31RqI?si=EboJ3h79bwZMpYNm",
   },
   {
-    id: "2",
-    author: "National Academy for Educational Research",
-    year: "n.d.",
-    title: "Analysis of solution strategies for biofuel demand inducing food crisis",
-    source: "Research Summary, No. 24",
-    url: "https://epaper.naer.edu.tw/edm?eg_name=ResearchSummary&edm_no=24&content_no=597",
+    id: "d2",
+    author: "Greenpeace Taiwan",
+    year: "2021",
+    title: "Apple commits to 100% carbon neutrality by 2030, Taiwan suppliers should accelerate transition",
+    source: "Greenpeace",
+    url: "https://www.greenpeace.org/taiwan/update/21361/apple-%E6%89%BF%E8%AB%BE-2030-%E5%AF%A6%E7%8F%BE100%E7%A2%B3%E4%B8%AD%E5%92%8C%EF%BC%8C%E8%87%BA%E7%81%A3%E8%98%8B%E6%9E%9C%E4%BE%9B%E6%87%89%E9%8F%88%E5%BB%A0%E5%95%86%E6%87%89%E5%8A%A0%E9%80%9F/",
   },
   {
-    id: "3",
-    author: "National Academy for Educational Research",
+    id: "d3",
+    author: "TSMC",
     year: "n.d.",
-    title: "Energy saving and carbon reduction for sustainable life development",
-    source: "Research Summary, No. 43",
-    url: "https://epaper.naer.edu.tw/edm?eg_name=ResearchSummary&edm_no=43&content_no=1170",
-  },
-  {
-    id: "4",
-    author: "National Academy for Educational Research",
-    year: "n.d.",
-    title: "Analysis of solution strategies for greenhouse gas emission problems",
-    source: "Research Summary, No. 25",
-    url: "https://epaper.naer.edu.tw/edm?eg_name=ResearchSummary&edm_no=25&content_no=619",
+    title: "ESG at TSMC",
+    source: "",
+    url: "https://esg.tsmc.com/zh-Hant",
   },
 ];
+
+// 參考文獻 - 短文篇
+export const essayReferences: Reference[] = [
+  {
+    id: "e1",
+    author: "Dun & Bradstreet",
+    year: "n.d.",
+    title: "ESG Registered",
+    source: "",
+    url: "https://www.dnb.com.tw/ESG-registered/",
+  },
+  {
+    id: "e2",
+    author: "United Way of Taiwan",
+    year: "n.d.",
+    title: "News and Updates",
+    source: "",
+    url: "https://www.unitedway.org.tw/view.aspx?SNo=4828&RID=cfce3c3c-8a60-4ce7-ac73-520a30992c74&srsltid=AfmBOoq5wtPQammcfrgNMQfZod9CVONrbJz3M9rjb1pwDBNCtEjiW9HL",
+  },
+  {
+    id: "e3",
+    author: "TSMC",
+    year: "n.d.",
+    title: "ESG at TSMC",
+    source: "",
+    url: "https://esg.tsmc.com/zh-Hant",
+  },
+];
+
+// Combined references for backwards compatibility
+export const references: Reference[] = [...dialogueReferences, ...essayReferences];

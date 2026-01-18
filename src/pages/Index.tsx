@@ -9,7 +9,8 @@ import {
   Cpu,
   Zap,
   Library,
-  BookOpen
+  BookOpen,
+  ArrowDown
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 
@@ -35,12 +36,10 @@ const Index = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    // Simulate file upload and navigate to dashboard
     navigate("/dashboard");
   };
 
   const handleUploadClick = () => {
-    // Simulate file upload and navigate to dashboard
     navigate("/dashboard");
   };
 
@@ -48,95 +47,159 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      {/* Hero Section */}
-      <section className="relative pt-16 overflow-hidden">
-        <div className="absolute inset-0 circuit-pattern" />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary to-background" />
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32">
+      {/* Hero Section - Editorial Cover Style */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Split Background */}
+        <div className="absolute inset-0">
+          {/* Left side - Tech/Semiconductor gradient */}
+          <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-br from-navy via-navy-light to-primary" />
+          {/* Right side - Green/Sustainability gradient */}
+          <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-bl from-sage via-sage-dark to-secondary" />
+          {/* Center blend overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/20 to-transparent" />
+          {/* Circuit pattern overlay */}
+          <div className="absolute inset-0 circuit-pattern opacity-30" />
+          {/* Subtle dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-navy/60 via-transparent to-navy/80" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
+            transition={{ duration: 0.8 }}
+            className="space-y-8"
           >
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 border border-primary-foreground/20 mb-8">
-              <Leaf className="w-4 h-4 text-secondary" />
-              <span className="text-sm text-primary-foreground/80">TBCL Level 5 - Sustainability & Semiconductors</span>
+            {/* Tagline */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gold/20 border border-gold/40"
+            >
+              <span className="text-sm font-medium text-gold-light tracking-wider uppercase">
+                TBCL Level 5 | Advanced Business Mandarin
+              </span>
+            </motion.div>
+
+            {/* Main Title - Editorial Style */}
+            <div className="space-y-4">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold text-primary-foreground leading-tight tracking-tight"
+              >
+                矽島的抉擇
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+                className="font-serif text-2xl sm:text-3xl lg:text-4xl text-gold font-medium"
+              >
+                在半導體與水田之間
+              </motion.p>
             </div>
 
-            {/* Main Title */}
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-primary-foreground mb-4 leading-tight">
-              華語教師備課系統
-            </h1>
-            
-            <p className="text-lg sm:text-xl text-primary-foreground/70 max-w-2xl mx-auto mb-4">
-              Mandarin Teacher Preparation System
-            </p>
-            
-            <p className="text-base text-primary-foreground/60 max-w-xl mx-auto mb-12">
-              TBCL Level 5 - 主題：永續發展與半導體產業
-            </p>
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-xl sm:text-2xl text-primary-foreground/80 font-light max-w-2xl mx-auto"
+            >
+              永續發展下的產業挑戰
+            </motion.p>
 
-            {/* Stats */}
+            {/* Stats Row */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-12"
+              transition={{ delay: 0.6 }}
+              className="flex justify-center gap-8 pt-4"
             >
               {stats.map((stat, index) => (
                 <div 
                   key={index}
-                  className="text-center p-3 rounded-xl bg-primary-foreground/5 border border-primary-foreground/10"
+                  className="text-center"
                 >
-                  <stat.icon className="w-5 h-5 text-secondary mx-auto mb-1" />
-                  <p className="text-xl font-serif font-bold text-primary-foreground">{stat.value}</p>
-                  <p className="text-xs text-primary-foreground/60">{stat.label}</p>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <stat.icon className="w-4 h-4 text-gold" />
+                    <span className="text-2xl font-serif font-bold text-primary-foreground">{stat.value}</span>
+                  </div>
+                  <span className="text-xs text-primary-foreground/60 uppercase tracking-wider">{stat.label}</span>
                 </div>
               ))}
             </motion.div>
-          </motion.div>
-        </div>
 
-        {/* Wave divider */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" className="w-full h-auto">
-            <path
-              fill="hsl(var(--background))"
-              d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"
-            />
-          </svg>
+            {/* Upload Button - Center Stage */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="pt-8"
+            >
+              <button
+                onClick={handleUploadClick}
+                className="group inline-flex items-center gap-3 px-10 py-4 rounded-xl bg-gold hover:bg-gold-dark text-navy font-semibold text-lg transition-all shadow-lg hover:shadow-gold/30 hover:scale-105"
+              >
+                <Upload className="w-5 h-5" />
+                檔案上傳
+                <span className="text-sm font-normal opacity-70">File Upload</span>
+              </button>
+            </motion.div>
+
+            {/* Scroll indicator */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="absolute bottom-8 left-1/2 -translate-x-1/2"
+            >
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              >
+                <ArrowDown className="w-6 h-6 text-primary-foreground/50" />
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* File Upload Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 -mt-8">
+      <section id="upload" className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-2xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             className="text-center mb-8"
           >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 text-gold text-sm font-medium mb-4">
+              <Cpu className="w-4 h-4" />
+              教師備課入口
+            </div>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
-              開始備課
+              上傳課程資料
             </h2>
             <p className="text-muted-foreground">
-              上傳您的課程資料，系統將自動解析並整理成教學模組
+              拖曳檔案或點擊下方區域，系統將自動解析並整理成教學模組
             </p>
           </motion.div>
 
           {/* Upload Zone */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
             className={`relative p-8 sm:p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
               isDragging
-                ? "border-secondary bg-secondary/10"
-                : "border-border hover:border-secondary/50 hover:bg-muted/50"
+                ? "border-gold bg-gold/10"
+                : "border-border hover:border-gold/50 hover:bg-muted/50"
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -145,10 +208,10 @@ const Index = () => {
           >
             <div className="flex flex-col items-center text-center">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                isDragging ? "bg-secondary" : "bg-muted"
+                isDragging ? "bg-gold" : "bg-muted"
               }`}>
                 {isDragging ? (
-                  <FileUp className="w-8 h-8 text-secondary-foreground" />
+                  <FileUp className="w-8 h-8 text-navy" />
                 ) : (
                   <Upload className="w-8 h-8 text-muted-foreground" />
                 )}
@@ -157,33 +220,31 @@ const Index = () => {
                 {isDragging ? "放開以上傳檔案" : "檔案上傳"}
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                拖曳檔案至此處，或點擊選擇檔案
+                支援格式：.docx, .pdf, .txt
               </p>
               <button
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium hover:bg-sage-dark transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gold text-navy font-medium hover:bg-gold-dark transition-all"
               >
-                檔案上傳
+                選擇檔案
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-muted-foreground text-center mt-6">
-              支援格式：.docx, .pdf, .txt
-            </p>
           </motion.div>
 
           {/* Quick Start */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
             className="mt-8 text-center"
           >
             <p className="text-sm text-muted-foreground mb-3">
-              或使用預設課程內容
+              或使用預設課程內容快速體驗
             </p>
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-2 text-secondary hover:text-secondary/80 font-medium transition-colors"
+              className="inline-flex items-center gap-2 text-gold hover:text-gold-dark font-medium transition-colors"
             >
               瀏覽示範課程
               <ArrowRight className="w-4 h-4" />
@@ -193,7 +254,7 @@ const Index = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-muted/50">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/50">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -221,7 +282,7 @@ const Index = () => {
                   "提升商務場合的溝通技巧",
                 ].map((item, index) => (
                   <li key={index} className="flex items-center gap-3 text-foreground">
-                    <div className="w-2 h-2 rounded-full bg-secondary" />
+                    <div className="w-2 h-2 rounded-full bg-gold" />
                     {item}
                   </li>
                 ))}
@@ -235,12 +296,23 @@ const Index = () => {
               transition={{ duration: 0.5 }}
               className="relative"
             >
-              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-navy to-navy-light overflow-hidden shadow-elevated">
-                <div className="absolute inset-0 flex items-center justify-center">
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-elevated relative">
+                {/* Split visual */}
+                <div className="absolute inset-0 flex">
+                  <div className="w-1/2 bg-gradient-to-br from-navy to-navy-light flex items-center justify-center">
+                    <Cpu className="w-20 h-20 text-primary-foreground/30" />
+                  </div>
+                  <div className="w-1/2 bg-gradient-to-bl from-sage to-sage-dark flex items-center justify-center">
+                    <Leaf className="w-20 h-20 text-secondary-foreground/30" />
+                  </div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-navy/80 via-transparent to-transparent">
                   <div className="text-center text-primary-foreground">
-                    <Cpu className="w-16 h-16 mx-auto mb-4 opacity-80" />
-                    <p className="text-2xl font-serif font-bold">矽島台灣</p>
+                    <p className="text-3xl font-serif font-bold">矽島台灣</p>
                     <p className="text-sm opacity-70">Silicon Island Taiwan</p>
+                    <div className="mt-2 inline-block px-3 py-1 bg-gold/20 rounded-full">
+                      <span className="text-xs text-gold">永續 × 創新</span>
+                    </div>
                   </div>
                 </div>
               </div>
