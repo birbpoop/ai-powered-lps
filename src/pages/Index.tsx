@@ -11,9 +11,13 @@ import {
   Library,
   BookOpen,
   ArrowDown,
-  Loader2
+  FileText,
+  Brain,
+  Sparkles,
+  CheckCircle2
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import { useLessonContext } from "@/contexts/LessonContext";
 
 const stats = [
   { value: "TBCL", label: "Level 5", icon: Zap },
@@ -21,11 +25,14 @@ const stats = [
   { value: "13", label: "語法點", icon: BookOpen },
 ];
 
+const parsingIcons = [FileText, Brain, Sparkles, CheckCircle2];
+
 const Index = () => {
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { startParsing, parsingStep, parsingSteps } = useLessonContext();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -39,22 +46,20 @@ const Index = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    simulateFileUpload();
+    handleFileParsing();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      simulateFileUpload();
+      handleFileParsing();
     }
   };
 
-  const simulateFileUpload = () => {
-    setIsLoading(true);
-    // Simulate parsing time
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/dashboard");
-    }, 2000);
+  const handleFileParsing = async () => {
+    setIsParsing(true);
+    await startParsing();
+    setIsParsing(false);
+    navigate("/dashboard");
   };
 
   const handleUploadClick = () => {
@@ -74,28 +79,96 @@ const Index = () => {
         onChange={handleFileChange}
       />
 
-      {/* Loading Overlay */}
+      {/* Multi-step Parsing Overlay */}
       <AnimatePresence>
-        {isLoading && (
+        {isParsing && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-navy/90 backdrop-blur-sm flex flex-col items-center justify-center gap-6"
+            className="fixed inset-0 z-[100] bg-navy/95 backdrop-blur-md flex flex-col items-center justify-center"
           >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-            >
-              <Loader2 className="w-16 h-16 text-gold" />
-            </motion.div>
-            <div className="text-center">
-              <p className="text-2xl font-serif font-bold text-primary-foreground mb-2">
-                解析教材中...
-              </p>
-              <p className="text-primary-foreground/60">
-                Parsing Material...
-              </p>
+            <div className="max-w-md w-full mx-auto px-6">
+              {/* Central Icon Animation */}
+              <motion.div
+                className="flex justify-center mb-8"
+                key={parsingStep}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center">
+                  {(() => {
+                    const IconComponent = parsingIcons[parsingStep] || FileText;
+                    return <IconComponent className="w-12 h-12 text-gold" />;
+                  })()}
+                </div>
+              </motion.div>
+
+              {/* Progress Steps */}
+              <div className="space-y-4">
+                {parsingSteps.map((step, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ 
+                      opacity: index <= parsingStep ? 1 : 0.3,
+                      x: 0 
+                    }}
+                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                    className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
+                      index === parsingStep 
+                        ? 'bg-gold/20 border border-gold/40' 
+                        : index < parsingStep 
+                          ? 'bg-secondary/10' 
+                          : 'bg-muted/10'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                      index < parsingStep 
+                        ? 'bg-secondary text-secondary-foreground' 
+                        : index === parsingStep 
+                          ? 'bg-gold text-navy' 
+                          : 'bg-muted/30 text-muted-foreground'
+                    }`}>
+                      {index < parsingStep ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <span className="text-sm font-bold">{index + 1}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${
+                        index <= parsingStep ? 'text-primary-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {step}
+                      </p>
+                    </div>
+                    {index === parsingStep && (
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-gold"
+                        animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                        transition={{ repeat: Infinity, duration: 1 }}
+                      />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-8">
+                <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-gold to-secondary rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${((parsingStep + 1) / parsingSteps.length) * 100}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+                <p className="text-center text-primary-foreground/60 text-sm mt-3">
+                  {Math.round(((parsingStep + 1) / parsingSteps.length) * 100)}% 完成
+                </p>
+              </div>
             </div>
           </motion.div>
         )}

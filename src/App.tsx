@@ -11,26 +11,29 @@ import Vocabulary from "./pages/Vocabulary";
 import Activities from "./pages/Activities";
 import NotFound from "./pages/NotFound";
 import AISiteTour from "./components/AISiteTour";
+import { LessonProvider } from "./contexts/LessonContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dialogue" element={<Dialogue />} />
-          <Route path="/essay" element={<Essay />} />
-          <Route path="/vocabulary" element={<Vocabulary />} />
-          <Route path="/activities" element={<Activities />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <AISiteTour />
-      </BrowserRouter>
+      <LessonProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dialogue" element={<Dialogue />} />
+            <Route path="/essay" element={<Essay />} />
+            <Route path="/vocabulary" element={<Vocabulary />} />
+            <Route path="/activities" element={<Activities />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <AISiteTour />
+        </BrowserRouter>
+      </LessonProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

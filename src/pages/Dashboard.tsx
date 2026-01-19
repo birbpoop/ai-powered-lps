@@ -5,24 +5,18 @@ import {
   BookOpen, 
   Mic,
   ExternalLink,
-  MessageCircle
+  MessageCircle,
+  Upload,
+  AlertCircle
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import KeywordTooltip from "@/components/KeywordTooltip";
 import VocabularyFlashcard from "@/components/VocabularyFlashcard";
 import RecordingSubmission from "@/components/RecordingSubmission";
-import { 
-  dialogueContent, 
-  dialogueVocabulary, 
-  dialogueGrammar,
-  essayContent,
-  essayVocabulary,
-  essayGrammar,
-  VocabularyItem,
-  dialogueReferences,
-  essayReferences
-} from "@/data/content";
+import { VocabularyItem } from "@/data/content";
+import { useLessonContext } from "@/contexts/LessonContext";
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
@@ -35,48 +29,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-
-// Create keyword maps
-const allVocabulary = [...dialogueVocabulary, ...essayVocabulary];
-const keywordMap: Record<string, VocabularyItem> = {};
-allVocabulary.forEach(v => {
-  keywordMap[v.word] = v;
-});
-
-const highlightKeywords = (text: string) => {
-  const keywords = Object.keys(keywordMap);
-  const parts: (string | JSX.Element)[] = [];
-  let lastIndex = 0;
-  
-  const sortedKeywords = keywords.sort((a, b) => b.length - a.length);
-  const regex = new RegExp(`(${sortedKeywords.join('|')})`, 'g');
-  
-  let match;
-  const allMatches: { index: number; word: string }[] = [];
-  
-  while ((match = regex.exec(text)) !== null) {
-    allMatches.push({ index: match.index, word: match[0] });
-  }
-  
-  allMatches.forEach((m, i) => {
-    if (m.index > lastIndex) {
-      parts.push(text.slice(lastIndex, m.index));
-    }
-    const keyword = keywordMap[m.word];
-    parts.push(
-      <KeywordTooltip key={`${m.word}-${i}`} keyword={keyword}>
-        {m.word}
-      </KeywordTooltip>
-    );
-    lastIndex = m.index + m.word.length;
-  });
-  
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-  
-  return parts.length > 0 ? parts : text;
-};
 
 // APA Reference component with hanging indent
 const APAReference = ({ author, year, title, source, url }: { 
@@ -100,7 +52,98 @@ const APAReference = ({ author, year, title, source, url }: {
 );
 
 const Dashboard = () => {
-  const practiceWords = dialogueVocabulary.slice(0, 3);
+  const navigate = useNavigate();
+  const { isParsed, lessonData } = useLessonContext();
+
+  // If not parsed, show empty state
+  if (!isParsed || !lessonData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
+                  尚未上傳教材
+                </h1>
+                <p className="text-muted-foreground mb-6">
+                  請先上傳課程檔案，系統將自動解析並生成教學模組
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate("/")}
+                className="gap-2 bg-gold hover:bg-gold-dark text-navy"
+              >
+                <Upload className="w-4 h-4" />
+                返回上傳頁面
+              </Button>
+            </motion.div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Get all vocabulary (10 words) for Module 4
+  const allVocabulary = [
+    ...lessonData.dialogue.vocabulary.slice(0, 5),
+    ...lessonData.essay.vocabulary.slice(0, 5),
+  ].slice(0, 10);
+
+  // Combined grammar
+  const allGrammar = [
+    ...lessonData.dialogue.grammar.slice(0, 2),
+    ...lessonData.essay.grammar.slice(0, 2),
+  ];
+
+  // Create keyword map for highlighting
+  const keywordMap: Record<string, VocabularyItem> = {};
+  [...lessonData.dialogue.vocabulary, ...lessonData.essay.vocabulary].forEach(v => {
+    keywordMap[v.word] = v;
+  });
+
+  const highlightKeywords = (text: string) => {
+    const keywords = Object.keys(keywordMap);
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    
+    const sortedKeywords = keywords.sort((a, b) => b.length - a.length);
+    const regex = new RegExp(`(${sortedKeywords.join('|')})`, 'g');
+    
+    let match;
+    const allMatches: { index: number; word: string }[] = [];
+    
+    while ((match = regex.exec(text)) !== null) {
+      allMatches.push({ index: match.index, word: match[0] });
+    }
+    
+    allMatches.forEach((m, i) => {
+      if (m.index > lastIndex) {
+        parts.push(text.slice(lastIndex, m.index));
+      }
+      const keyword = keywordMap[m.word];
+      parts.push(
+        <KeywordTooltip key={`${m.word}-${i}`} keyword={keyword}>
+          {m.word}
+        </KeywordTooltip>
+      );
+      lastIndex = m.index + m.word.length;
+    });
+    
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+    
+    return parts.length > 0 ? parts : text;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,12 +203,12 @@ const Dashboard = () => {
                       <div className="flex items-center gap-2 mb-4">
                         <span className="px-3 py-1 bg-gold text-navy rounded-full text-sm font-bold">A</span>
                         <h3 className="font-serif text-lg font-semibold text-foreground">
-                          會話篇 - {dialogueContent.title}
+                          會話篇 - {lessonData.dialogue.content.title}
                         </h3>
                       </div>
                       
                       <div className="space-y-4 mb-6">
-                        {dialogueContent.lines.slice(0, 8).map((line, index) => (
+                        {lessonData.dialogue.content.lines.slice(0, 8).map((line, index) => (
                           <div key={index} className="pl-4 border-l-2 border-gold/40">
                             <p className="text-sm font-medium text-gold mb-1">{line.speaker}：</p>
                             <p className="text-foreground leading-relaxed">
@@ -187,7 +230,7 @@ const Dashboard = () => {
                       {/* APA References - Conversation */}
                       <div className="p-4 rounded-lg bg-background border-l-4 border-gold">
                         <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
-                        {dialogueReferences.map((ref) => (
+                        {lessonData.dialogue.references.map((ref) => (
                           <APAReference 
                             key={ref.id}
                             author={ref.author}
@@ -207,12 +250,12 @@ const Dashboard = () => {
                       <div className="flex items-center gap-2 mb-4">
                         <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm font-bold">B</span>
                         <h3 className="font-serif text-lg font-semibold text-foreground">
-                          短文篇 - {essayContent.title}
+                          短文篇 - {lessonData.essay.content.title}
                         </h3>
                       </div>
                       
                       <div className="mb-6 space-y-4">
-                        {essayContent.paragraphs.slice(0, 2).map((para, index) => (
+                        {lessonData.essay.content.paragraphs.slice(0, 2).map((para, index) => (
                           <p key={index} className="text-foreground leading-loose indent-8">
                             {highlightKeywords(para)}
                           </p>
@@ -231,7 +274,7 @@ const Dashboard = () => {
                       {/* APA References - Passage */}
                       <div className="p-4 rounded-lg bg-background border-l-4 border-secondary">
                         <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
-                        {essayReferences.map((ref) => (
+                        {lessonData.essay.references.map((ref) => (
                           <APAReference 
                             key={ref.id}
                             author={ref.author}
@@ -275,7 +318,7 @@ const Dashboard = () => {
                     to="/vocabulary"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/10 text-gold hover:bg-gold/20 transition-colors text-sm font-medium"
                   >
-                    查看全部 {allVocabulary.length} 個詞彙
+                    查看全部詞彙
                     <ExternalLink className="w-4 h-4" />
                   </Link>
                 </div>
@@ -297,7 +340,7 @@ const Dashboard = () => {
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
                 <div className="space-y-3">
-                  {[...dialogueGrammar.slice(0, 2), ...essayGrammar.slice(0, 2)].map((grammar, index) => (
+                  {allGrammar.map((grammar, index) => (
                     <div 
                       key={index}
                       className="p-4 rounded-lg bg-muted/50 border border-border"
@@ -336,23 +379,23 @@ const Dashboard = () => {
               <AccordionContent className="px-6 pb-6 space-y-6">
                 {/* Activity Description */}
                 <div className="p-4 rounded-lg bg-gold/10 border border-gold/20">
-                  <h3 className="font-medium text-foreground mb-2">模擬辯論賽 & 王牌銷售員</h3>
+                  <h3 className="font-medium text-foreground mb-2">生詞發音練習與檢測</h3>
                   <p className="text-sm text-muted-foreground">
-                    Simulation Debate & Sales Pitch
+                    Vocabulary Pronunciation Practice
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    「半導體產業會/不會阻撓環境的發展」
+                    練習以下 10 個核心生詞的發音，錄音後提交給教師評分
                   </p>
                 </div>
 
-                {/* Student Recording & Teacher Grading System */}
+                {/* All 10 Vocabulary Recording Submissions */}
                 <div>
                   <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-xs">錄音作業</span>
-                    錄音作業提交 Recording Submission
+                    錄音作業提交 Recording Submission ({allVocabulary.length} 個詞彙)
                   </h3>
                   <div className="grid gap-4">
-                    {practiceWords.map((word, index) => (
+                    {allVocabulary.map((word, index) => (
                       <RecordingSubmission 
                         key={index}
                         targetText={word.word}
