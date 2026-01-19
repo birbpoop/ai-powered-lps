@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Upload,
   FileUp,
@@ -10,7 +10,8 @@ import {
   Zap,
   Library,
   BookOpen,
-  ArrowDown
+  ArrowDown,
+  Loader2
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 
@@ -22,7 +23,9 @@ const stats = [
 
 const Index = () => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -36,16 +39,67 @@ const Index = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    navigate("/dashboard");
+    simulateFileUpload();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      simulateFileUpload();
+    }
+  };
+
+  const simulateFileUpload = () => {
+    setIsLoading(true);
+    // Simulate parsing time
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate("/dashboard");
+    }, 2000);
   };
 
   const handleUploadClick = () => {
-    navigate("/dashboard");
+    fileInputRef.current?.click();
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".docx,.pdf,.txt"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* Loading Overlay */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-navy/90 backdrop-blur-sm flex flex-col items-center justify-center gap-6"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+            >
+              <Loader2 className="w-16 h-16 text-gold" />
+            </motion.div>
+            <div className="text-center">
+              <p className="text-2xl font-serif font-bold text-primary-foreground mb-2">
+                解析教材中...
+              </p>
+              <p className="text-primary-foreground/60">
+                Parsing Material...
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Hero Section - Editorial Cover Style */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -134,7 +188,7 @@ const Index = () => {
               ))}
             </motion.div>
 
-            {/* Upload Button - Center Stage */}
+            {/* Upload Button - Center Stage - Triggers File Explorer */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

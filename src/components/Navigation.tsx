@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, MessageSquare, FileText, Library, BookOpen, Users, Home, MessageCircle } from "lucide-react";
+import { Menu, X, Home, BookOpen, Library, Puzzle, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
-  { path: "/", label: "Home", labelZh: "首頁", icon: Home },
-  { path: "/dashboard#warmup", label: "Warm-up", labelZh: "暖身", icon: MessageSquare },
-  { path: "/dialogue", label: "Conversation", labelZh: "會話", icon: MessageCircle },
-  { path: "/essay", label: "Passage", labelZh: "短文", icon: FileText },
-  { path: "/vocabulary", label: "Vocabulary", labelZh: "生詞", icon: Library },
-  { path: "/dashboard#grammar", label: "Grammar", labelZh: "語法", icon: BookOpen },
-  { path: "/activities", label: "Activities", labelZh: "活動", icon: Users },
+  { path: "/", label: "Home", labelZh: "🏠 首頁", icon: Home },
+  { path: "/dashboard#content", label: "Content", labelZh: "📖 課文學習", icon: BookOpen },
+  { path: "/vocabulary", label: "Vocabulary", labelZh: "📇 生詞庫", icon: Library },
+  { path: "/dashboard#grammar", label: "Grammar", labelZh: "🧩 語法重點", icon: Puzzle },
+  { path: "/activities", label: "Activities", labelZh: "🎙️ 課堂活動", icon: Mic },
 ];
 
 const Navigation = () => {
@@ -65,16 +63,14 @@ const Navigation = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive
                       ? "text-gold bg-primary-foreground/10"
                       : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/5"
                   }`}
                 >
                   <span className="flex items-center gap-1.5">
-                    <item.icon className="w-4 h-4" />
-                    <span className="hidden xl:inline">{item.labelZh}</span>
-                    <span className="xl:hidden">{item.label}</span>
+                    <span>{item.labelZh}</span>
                   </span>
                   {isActive && (
                     <motion.div

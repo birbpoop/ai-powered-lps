@@ -1,10 +1,9 @@
 import { motion } from "framer-motion";
 import { 
-  MessageSquare, 
   FileText, 
   Library, 
   BookOpen, 
-  Users,
+  Mic,
   ExternalLink,
   MessageCircle
 } from "lucide-react";
@@ -12,7 +11,7 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import KeywordTooltip from "@/components/KeywordTooltip";
 import VocabularyFlashcard from "@/components/VocabularyFlashcard";
-import SimplifiedAudioAnalyzer from "@/components/SimplifiedAudioAnalyzer";
+import RecordingSubmission from "@/components/RecordingSubmission";
 import { 
   dialogueContent, 
   dialogueVocabulary, 
@@ -79,13 +78,6 @@ const highlightKeywords = (text: string) => {
   return parts.length > 0 ? parts : text;
 };
 
-const warmUpQuestions = [
-  "你平常注意環保議題嗎？舉一個你做過的永續行動。",
-  "你認為企業在推動永續發展上，扮演了什麼樣的角色？",
-  "請概述或猜測何為聯合國推動之「環境、社會與管治」？",
-  "如何在科技與環境之間取捨？何者為優先考量？",
-];
-
 // APA Reference component with hanging indent
 const APAReference = ({ author, year, title, source, url }: { 
   author: string; 
@@ -126,52 +118,25 @@ const Dashboard = () => {
               TBCL Level 5 | Advanced Business Mandarin
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
-              課程內容總覽
+              教學模組總覽
             </h1>
             <p className="text-muted-foreground">
               永續發展與半導體產業
             </p>
           </motion.div>
 
-          {/* Accordion Sections */}
-          <Accordion type="multiple" defaultValue={["warmup"]} className="space-y-4">
-            {/* Section 1: Warm-up */}
-            <AccordionItem value="warmup" id="warmup" className="border border-border rounded-xl overflow-hidden bg-card">
-              <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-navy" />
-                  </div>
-                  <div className="text-left">
-                    <h2 className="font-serif text-lg font-semibold text-foreground">課前暖身</h2>
-                    <p className="text-sm text-muted-foreground">Warm-up Questions</p>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <ol className="space-y-4">
-                  {warmUpQuestions.map((q, i) => (
-                    <li key={i} className="flex gap-3 text-foreground leading-relaxed">
-                      <span className="shrink-0 w-6 h-6 rounded-full bg-gold/10 text-gold text-sm font-medium flex items-center justify-center">
-                        {i + 1}
-                      </span>
-                      <span>{q}</span>
-                    </li>
-                  ))}
-                </ol>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Section 2: Content - Using Tabs */}
+          {/* Accordion Sections - 4 Teaching Modules */}
+          <Accordion type="multiple" defaultValue={["content"]} className="space-y-4">
+            {/* Module 1: 課文學習 (Content Learning) */}
             <AccordionItem value="content" id="content" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-primary-foreground" />
+                    <BookOpen className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <div className="text-left">
-                    <h2 className="font-serif text-lg font-semibold text-foreground">內容</h2>
-                    <p className="text-sm text-muted-foreground">Conversation & Short Passage</p>
+                    <h2 className="font-serif text-lg font-semibold text-foreground">📖 課文學習</h2>
+                    <p className="text-sm text-muted-foreground">Content Learning</p>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -221,7 +186,7 @@ const Dashboard = () => {
                       
                       {/* APA References - Conversation */}
                       <div className="p-4 rounded-lg bg-background border-l-4 border-gold">
-                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">References</p>
+                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
                         {dialogueReferences.map((ref) => (
                           <APAReference 
                             key={ref.id}
@@ -265,7 +230,7 @@ const Dashboard = () => {
                       
                       {/* APA References - Passage */}
                       <div className="p-4 rounded-lg bg-background border-l-4 border-secondary">
-                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">References</p>
+                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
                         {essayReferences.map((ref) => (
                           <APAReference 
                             key={ref.id}
@@ -283,7 +248,7 @@ const Dashboard = () => {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Section 3: Vocabulary Bank */}
+            {/* Module 2: 生詞庫 (Vocabulary Bank) */}
             <AccordionItem value="vocabulary" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
@@ -291,7 +256,7 @@ const Dashboard = () => {
                     <Library className="w-4 h-4 text-navy" />
                   </div>
                   <div className="text-left">
-                    <h2 className="font-serif text-lg font-semibold text-foreground">生詞庫</h2>
+                    <h2 className="font-serif text-lg font-semibold text-foreground">📇 生詞庫</h2>
                     <p className="text-sm text-muted-foreground">Vocabulary Bank</p>
                   </div>
                 </div>
@@ -317,7 +282,7 @@ const Dashboard = () => {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Section 4: Grammar Points */}
+            {/* Module 3: 語法重點 (Grammar Points) */}
             <AccordionItem value="grammar" id="grammar" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
@@ -325,7 +290,7 @@ const Dashboard = () => {
                     <BookOpen className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <div className="text-left">
-                    <h2 className="font-serif text-lg font-semibold text-foreground">語法點</h2>
+                    <h2 className="font-serif text-lg font-semibold text-foreground">🧩 語法重點</h2>
                     <p className="text-sm text-muted-foreground">Grammar Points</p>
                   </div>
                 </div>
@@ -355,15 +320,15 @@ const Dashboard = () => {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Section 5: Classroom Activity */}
+            {/* Module 4: 課堂活動 (Classroom Activity) */}
             <AccordionItem value="activity" className="border border-border rounded-xl overflow-hidden bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center">
-                    <Users className="w-4 h-4 text-navy" />
+                    <Mic className="w-4 h-4 text-navy" />
                   </div>
                   <div className="text-left">
-                    <h2 className="font-serif text-lg font-semibold text-foreground">課堂活動</h2>
+                    <h2 className="font-serif text-lg font-semibold text-foreground">🎙️ 課堂活動</h2>
                     <p className="text-sm text-muted-foreground">Classroom Activity</p>
                   </div>
                 </div>
@@ -371,7 +336,7 @@ const Dashboard = () => {
               <AccordionContent className="px-6 pb-6 space-y-6">
                 {/* Activity Description */}
                 <div className="p-4 rounded-lg bg-gold/10 border border-gold/20">
-                  <h3 className="font-medium text-foreground mb-2">模擬辯論與銷售提案</h3>
+                  <h3 className="font-medium text-foreground mb-2">模擬辯論賽 & 王牌銷售員</h3>
                   <p className="text-sm text-muted-foreground">
                     Simulation Debate & Sales Pitch
                   </p>
@@ -380,15 +345,15 @@ const Dashboard = () => {
                   </p>
                 </div>
 
-                {/* AI Pronunciation Coach */}
+                {/* Student Recording & Teacher Grading System */}
                 <div>
                   <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-xs">AI</span>
-                    發音教練 Pronunciation Coach
+                    <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-xs">錄音作業</span>
+                    錄音作業提交 Recording Submission
                   </h3>
                   <div className="grid gap-4">
                     {practiceWords.map((word, index) => (
-                      <SimplifiedAudioAnalyzer 
+                      <RecordingSubmission 
                         key={index}
                         targetText={word.word}
                         targetPinyin={word.pinyin}
