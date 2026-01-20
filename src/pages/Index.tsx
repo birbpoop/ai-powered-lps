@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Upload,
@@ -46,24 +46,28 @@ const Index = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    handleFileParsing();
+    handleFileParsing(false); // Upload mode - empty template
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      handleFileParsing();
+      handleFileParsing(false); // Upload mode - empty template
     }
   };
 
-  const handleFileParsing = async () => {
+  const handleFileParsing = async (demoMode: boolean) => {
     setIsParsing(true);
-    await startParsing();
+    await startParsing(demoMode);
     setIsParsing(false);
     navigate("/dashboard");
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleDemoClick = () => {
+    handleFileParsing(true); // Demo mode - load hardcoded data
   };
 
   return (
@@ -261,24 +265,33 @@ const Index = () => {
               ))}
             </motion.div>
 
-            {/* Upload Button - Center Stage - Triggers File Explorer */}
+            {/* Action Buttons - Two Distinct Paths */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="pt-8"
+              className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
             >
+              {/* Button 1: File Upload - Ghost/Outline style */}
               <button
                 onClick={handleUploadClick}
-                className="group inline-flex items-center gap-3 px-10 py-4 rounded-xl bg-gold hover:bg-gold-dark text-navy font-semibold text-lg transition-all shadow-lg hover:shadow-gold/30 hover:scale-105"
+                className="group inline-flex items-center gap-3 px-8 py-4 rounded-xl border-2 border-gold/60 bg-transparent hover:bg-gold/10 text-gold font-semibold text-lg transition-all hover:border-gold hover:scale-105"
               >
                 <Upload className="w-5 h-5" />
                 檔案上傳
                 <span className="text-sm font-normal opacity-70">File Upload</span>
               </button>
-            </motion.div>
 
-            {/* Scroll indicator */}
+              {/* Button 2: Browse Demo Course - Primary Solid style (Highlighted) */}
+              <button
+                onClick={handleDemoClick}
+                className="group inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-gold hover:bg-gold-dark text-navy font-semibold text-lg transition-all shadow-lg hover:shadow-gold/30 hover:scale-105"
+              >
+                <BookOpen className="w-5 h-5" />
+                瀏覽示範課程
+                <span className="text-sm font-normal opacity-70">Browse Demo</span>
+              </button>
+            </motion.div>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -358,7 +371,7 @@ const Index = () => {
             </div>
           </motion.div>
 
-          {/* Quick Start */}
+          {/* Quick Start - Demo Mode */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -369,13 +382,14 @@ const Index = () => {
             <p className="text-sm text-muted-foreground mb-3">
               或使用預設課程內容快速體驗
             </p>
-            <Link
-              to="/dashboard"
+            <button
+              onClick={handleDemoClick}
               className="inline-flex items-center gap-2 text-gold hover:text-gold-dark font-medium transition-colors"
             >
+              <BookOpen className="w-4 h-4" />
               瀏覽示範課程
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </button>
           </motion.div>
         </div>
       </section>

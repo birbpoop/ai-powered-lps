@@ -53,7 +53,7 @@ const APAReference = ({ author, year, title, source, url }: {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { isParsed, lessonData } = useLessonContext();
+  const { isParsed, isDemoMode, lessonData } = useLessonContext();
 
   // If not parsed, show empty state
   if (!isParsed || !lessonData) {
@@ -91,6 +91,13 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  // Check if content is empty (upload mode with no real data)
+  const hasDialogueContent = lessonData.dialogue.content.lines.length > 0;
+  const hasEssayContent = lessonData.essay.content.paragraphs.length > 0;
+  const hasVocabulary = lessonData.dialogue.vocabulary.length > 0 || lessonData.essay.vocabulary.length > 0;
+  const hasGrammar = lessonData.dialogue.grammar.length > 0 || lessonData.essay.grammar.length > 0;
+  const hasContent = hasDialogueContent || hasEssayContent || hasVocabulary || hasGrammar;
 
   // Get all vocabulary (10 words) for Module 4
   const allVocabulary = [
@@ -145,6 +152,56 @@ const Dashboard = () => {
     return parts.length > 0 ? parts : text;
   };
 
+  // Show upload mode empty state when file was uploaded but has no real content
+  if (!hasContent && !isDemoMode) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="w-24 h-24 rounded-full bg-secondary/20 flex items-center justify-center mx-auto">
+                <FileText className="w-12 h-12 text-secondary" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
+                  檔案解析完成
+                </h1>
+                <p className="text-muted-foreground mb-2">
+                  您上傳的檔案已成功解析。目前顯示空白教學模組模板。
+                </p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  實際應用中，系統會自動填入解析後的課文、生詞、語法等內容。
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={() => navigate("/")}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  上傳其他檔案
+                </Button>
+                <Button
+                  onClick={() => navigate("/")}
+                  className="gap-2 bg-gold hover:bg-gold-dark text-navy"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  瀏覽示範課程
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -158,13 +215,13 @@ const Dashboard = () => {
             className="text-center mb-12"
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-sm font-medium mb-4">
-              TBCL Level 5 | Advanced Business Mandarin
+              {isDemoMode ? "TBCL Level 5 | 示範課程" : "TBCL Level 5 | 自訂課程"}
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
               教學模組總覽
             </h1>
             <p className="text-muted-foreground">
-              永續發展與半導體產業
+              {isDemoMode ? "永續發展與半導體產業" : lessonData.dialogue.content.title}
             </p>
           </motion.div>
 

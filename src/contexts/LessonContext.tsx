@@ -28,13 +28,29 @@ interface LessonData {
   };
 }
 
+// Empty template for upload mode
+const emptyDialogueContent = {
+  title: "待上傳課程",
+  warmUp: [] as string[],
+  characters: [] as { name: string; role: string }[],
+  setting: "",
+  lines: [] as { speaker: string; text: string }[],
+};
+
+const emptyEssayContent = {
+  title: "待上傳課程",
+  warmUp: [] as string[],
+  paragraphs: [] as string[],
+};
+
 interface LessonContextType {
   isParsed: boolean;
   isParsingComplete: boolean;
+  isDemoMode: boolean;
   lessonData: LessonData | null;
   parsingStep: number;
   parsingSteps: string[];
-  startParsing: () => Promise<void>;
+  startParsing: (demoMode?: boolean) => Promise<void>;
   resetParsing: () => void;
 }
 
@@ -50,12 +66,14 @@ const LessonContext = createContext<LessonContextType | undefined>(undefined);
 export const LessonProvider = ({ children }: { children: ReactNode }) => {
   const [isParsed, setIsParsed] = useState(false);
   const [isParsingComplete, setIsParsingComplete] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [lessonData, setLessonData] = useState<LessonData | null>(null);
   const [parsingStep, setParsingStep] = useState(0);
 
-  const startParsing = async () => {
+  const startParsing = async (demoMode: boolean = false) => {
     setIsParsed(false);
     setIsParsingComplete(false);
+    setIsDemoMode(demoMode);
     setParsingStep(0);
 
     // Simulate multi-step parsing with delays
@@ -64,8 +82,8 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
       await new Promise(resolve => setTimeout(resolve, 1200));
     }
 
-    // After parsing complete, populate with demo data
-    const parsedData: LessonData = {
+    // Populate with demo data or empty template based on mode
+    const parsedData: LessonData = demoMode ? {
       dialogue: {
         content: dialogueContent,
         vocabulary: dialogueVocabulary,
@@ -78,6 +96,19 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
         grammar: essayGrammar,
         references: essayReferences,
       },
+    } : {
+      dialogue: {
+        content: emptyDialogueContent as typeof dialogueContent,
+        vocabulary: [],
+        grammar: [],
+        references: [],
+      },
+      essay: {
+        content: emptyEssayContent as typeof essayContent,
+        vocabulary: [],
+        grammar: [],
+        references: [],
+      },
     };
 
     setLessonData(parsedData);
@@ -88,6 +119,7 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
   const resetParsing = () => {
     setIsParsed(false);
     setIsParsingComplete(false);
+    setIsDemoMode(false);
     setLessonData(null);
     setParsingStep(0);
   };
@@ -97,6 +129,7 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
       value={{
         isParsed,
         isParsingComplete,
+        isDemoMode,
         lessonData,
         parsingStep,
         parsingSteps: parsingStepsData,
