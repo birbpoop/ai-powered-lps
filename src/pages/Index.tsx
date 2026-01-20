@@ -19,10 +19,18 @@ import {
 import Navigation from "@/components/Navigation";
 import { useLessonContext } from "@/contexts/LessonContext";
 
-const stats = [
+// Demo content stats - only shown after entering demo mode
+const demoStats = [
   { value: "TBCL", label: "Level 5", icon: Zap },
   { value: "40+", label: "核心生詞", icon: Library },
   { value: "13", label: "語法點", icon: BookOpen },
+];
+
+// SaaS product features
+const productFeatures = [
+  { icon: Library, label: "生詞自動提取" },
+  { icon: BookOpen, label: "語法點分析" },
+  { icon: Zap, label: "教學模組生成" },
 ];
 
 const parsingIcons = [FileText, Brain, Sparkles, CheckCircle2];
@@ -202,7 +210,7 @@ const Index = () => {
             transition={{ duration: 0.8 }}
             className="space-y-8"
           >
-            {/* Tagline */}
+            {/* Tagline - Product Focused */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -210,11 +218,11 @@ const Index = () => {
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gold/20 border border-gold/40"
             >
               <span className="text-sm font-medium text-gold-light tracking-wider uppercase">
-                TBCL Level 5 | Advanced Business Mandarin
+                AI-Powered Teaching Preparation Platform
               </span>
             </motion.div>
 
-            {/* Main Title - Editorial Style */}
+            {/* Main Title - SaaS Product Style */}
             <div className="space-y-4">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -222,7 +230,7 @@ const Index = () => {
                 transition={{ delay: 0.3, duration: 0.6 }}
                 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold text-primary-foreground leading-tight tracking-tight"
               >
-                矽島的抉擇
+                智慧華語備課系統
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
@@ -230,37 +238,34 @@ const Index = () => {
                 transition={{ delay: 0.4, duration: 0.6 }}
                 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-gold font-medium"
               >
-                在半導體與水田之間
+                AI-Powered Lesson Preparation System
               </motion.p>
             </div>
 
-            {/* Subtitle */}
+            {/* Subtitle - Product Description */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
               className="text-xl sm:text-2xl text-primary-foreground/80 font-light max-w-2xl mx-auto"
             >
-              永續發展下的產業挑戰
+              一鍵生成生詞、語法與教學活動，提升備課效率
             </motion.p>
 
-            {/* Stats Row */}
+            {/* Features Row - Product Capabilities */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="flex justify-center gap-8 pt-4"
+              className="flex justify-center gap-6 pt-4"
             >
-              {stats.map((stat, index) => (
+              {productFeatures.map((feature, index) => (
                 <div 
                   key={index}
-                  className="text-center"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 border border-primary-foreground/20"
                 >
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <stat.icon className="w-4 h-4 text-gold" />
-                    <span className="text-2xl font-serif font-bold text-primary-foreground">{stat.value}</span>
-                  </div>
-                  <span className="text-xs text-primary-foreground/60 uppercase tracking-wider">{stat.label}</span>
+                  <feature.icon className="w-4 h-4 text-gold" />
+                  <span className="text-sm text-primary-foreground/80">{feature.label}</span>
                 </div>
               ))}
             </motion.div>

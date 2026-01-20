@@ -1,16 +1,25 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Library, Search, Filter } from "lucide-react";
+import { Library, Search, Filter, Upload, BookOpen } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import VocabularyCard from "@/components/VocabularyCard";
 import { dialogueVocabulary, essayVocabulary } from "@/data/content";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useLessonContext } from "@/contexts/LessonContext";
 
-const allVocabulary = [...dialogueVocabulary, ...essayVocabulary];
-
+const allVocabularyData = [...dialogueVocabulary, ...essayVocabulary];
 const Vocabulary = () => {
+  const navigate = useNavigate();
+  const { isParsed, isDemoMode, lessonData } = useLessonContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState<number | null>(null);
+
+  // Get vocabulary from context or use empty array
+  const allVocabulary = isParsed && lessonData 
+    ? [...lessonData.dialogue.vocabulary, ...lessonData.essay.vocabulary]
+    : [];
 
   const filteredVocabulary = useMemo(() => {
     return allVocabulary.filter((vocab) => {
@@ -20,7 +29,54 @@ const Vocabulary = () => {
       const matchesLevel = levelFilter === null || vocab.level === levelFilter;
       return matchesSearch && matchesLevel;
     });
-  }, [searchTerm, levelFilter]);
+  }, [allVocabulary, searchTerm, levelFilter]);
+
+  // Empty state when not parsed
+  if (!isParsed || !lessonData || allVocabulary.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <Library className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
+                  生詞庫
+                </h1>
+                <p className="text-muted-foreground mb-6">
+                  請上傳檔案或瀏覽示範課程以檢視生詞
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={() => navigate("/")}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  上傳檔案
+                </Button>
+                <Button
+                  onClick={() => navigate("/")}
+                  className="gap-2 bg-gold hover:bg-gold-dark text-navy"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  瀏覽示範課程
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
