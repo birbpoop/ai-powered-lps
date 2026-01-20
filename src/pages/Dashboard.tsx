@@ -208,21 +208,51 @@ const Dashboard = () => {
       
       <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
+          {/* Header - Demo Mode shows Silicon Island details */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-sm font-medium mb-4">
-              {isDemoMode ? "TBCL Level 5 | 示範課程" : "TBCL Level 5 | 自訂課程"}
-            </div>
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
-              教學模組總覽
-            </h1>
-            <p className="text-muted-foreground">
-              {isDemoMode ? "永續發展與半導體產業" : lessonData.dialogue.content.title}
-            </p>
+            {isDemoMode && (
+              <>
+                {/* Demo Lesson Title */}
+                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">
+                  矽島的抉擇——在半導體與水田之間
+                </h1>
+                <p className="text-lg text-muted-foreground mb-4">
+                  永續發展下的產業挑戰
+                </p>
+                {/* Demo Stats Tags */}
+                <div className="flex flex-wrap justify-center gap-3 mb-6">
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-sm font-medium">
+                    TBCL Level 5
+                  </span>
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
+                    Advanced Business Mandarin
+                  </span>
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy/10 text-navy text-sm font-medium">
+                    40+ Core Vocab
+                  </span>
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted text-muted-foreground text-sm font-medium">
+                    13 Grammar Points
+                  </span>
+                </div>
+              </>
+            )}
+            {!isDemoMode && (
+              <>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-sm font-medium mb-4">
+                  自訂課程
+                </div>
+                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
+                  教學模組總覽
+                </h1>
+                <p className="text-muted-foreground">
+                  {lessonData.dialogue.content.title}
+                </p>
+              </>
+            )}
           </motion.div>
 
           {/* Accordion Sections - 4 Teaching Modules */}

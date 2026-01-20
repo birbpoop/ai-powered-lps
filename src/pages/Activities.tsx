@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Scale, ShoppingBag, Save, RotateCcw, CheckCircle, Mic } from "lucide-react";
+import { Users, Scale, ShoppingBag, Save, RotateCcw, CheckCircle, Mic, Upload, BookOpen, Library, AlertCircle } from "lucide-react";
 import Navigation from "@/components/Navigation";
-import SimplifiedAudioAnalyzer from "@/components/SimplifiedAudioAnalyzer";
+import RecordingSubmission from "@/components/RecordingSubmission";
 import ReferencesSection from "@/components/ReferencesSection";
-import { dialogueVocabulary } from "@/data/content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-
+import { useLessonContext } from "@/contexts/LessonContext";
 interface DebateNotes {
   proArguments: string;
   conArguments: string;
@@ -25,7 +26,9 @@ interface SalesNotes {
 }
 
 const Activities = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { isParsed, isDemoMode, lessonData } = useLessonContext();
   
   const [debateNotes, setDebateNotes] = useState<DebateNotes>({
     proArguments: "",
@@ -94,8 +97,57 @@ const Activities = () => {
     });
   };
 
-  // Get sample vocabulary for audio practice
-  const practiceWords = dialogueVocabulary.slice(0, 4);
+  // Get vocabulary for pronunciation practice from lesson context
+  const practiceVocabulary = isParsed && lessonData 
+    ? [...lessonData.dialogue.vocabulary.slice(0, 5), ...lessonData.essay.vocabulary.slice(0, 5)].slice(0, 10)
+    : [];
+
+  // Empty state when not parsed
+  if (!isParsed || !lessonData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <Mic className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
+                  課堂活動
+                </h1>
+                <p className="text-muted-foreground mb-6">
+                  請上傳檔案或瀏覽示範課程以查看活動內容
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={() => navigate("/")}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  上傳檔案
+                </Button>
+                <Button
+                  onClick={() => navigate("/")}
+                  className="gap-2 bg-gold hover:bg-gold-dark text-navy"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  瀏覽示範課程
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,15 +161,24 @@ const Activities = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-navy/10 text-navy text-sm font-medium mb-4">
-              <Users className="w-4 h-4" />
-              課室活動
-            </div>
+            {/* Demo Course Badge */}
+            {isDemoMode && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gold/20 text-gold text-sm font-medium mb-4 border border-gold/30">
+                <AlertCircle className="w-4 h-4" />
+                示範課程專用活動 (Demo Course Activity Sample)
+              </div>
+            )}
+            {!isDemoMode && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-navy/10 text-navy text-sm font-medium mb-4">
+                <Users className="w-4 h-4" />
+                課室活動
+              </div>
+            )}
             <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground mb-4">
               互動式學習活動
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              透過辯論、銷售演練與AI發音分析，深化對永續發展議題的理解
+              透過辯論、銷售演練與發音練習，深化對永續發展議題的理解
             </p>
           </motion.div>
 
@@ -139,9 +200,9 @@ const Activities = () => {
                   <span className="hidden sm:inline">王牌銷售員</span>
                   <span className="sm:hidden">銷售</span>
                 </TabsTrigger>
-                <TabsTrigger value="pronunciation" className="flex items-center gap-2 text-sm sm:text-base">
+              <TabsTrigger value="pronunciation" className="flex items-center gap-2 text-sm sm:text-base">
                   <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">AI 發音教練</span>
+                  <span className="hidden sm:inline">生詞發音練習</span>
                   <span className="sm:hidden">發音</span>
                 </TabsTrigger>
               </TabsList>
@@ -355,28 +416,42 @@ const Activities = () => {
                 </div>
               </TabsContent>
 
-              {/* Pronunciation Activity */}
+              {/* Pronunciation Activity - Vocabulary Recording Submission */}
               <TabsContent value="pronunciation">
                 <div className="space-y-6">
                   {/* Instructions */}
                   <div className="p-6 rounded-2xl bg-muted/50 border border-border">
-                    <h3 className="font-serif text-lg font-semibold text-foreground mb-3">
-                      AI 發音教練
-                    </h3>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="font-serif text-lg font-semibold text-foreground">
+                        生詞發音練習與檢測
+                      </h3>
+                      {isDemoMode && (
+                        <span className="px-2 py-1 bg-gold/20 text-gold text-xs font-medium rounded-full">
+                          Demo
+                        </span>
+                      )}
+                    </div>
                     <p className="text-muted-foreground leading-relaxed">
-                      錄製您的發音，系統將分析並顯示準確度評分。
+                      錄製您對每個生詞的發音，完成後可提交給教師評分。系統會自動處理音訊，您可在提交前播放確認。
                     </p>
                   </div>
 
-                  {/* Practice Words with Simplified Analyzer */}
-                  <div className="grid gap-6">
-                    {practiceWords.map((word) => (
-                      <SimplifiedAudioAnalyzer 
-                        key={word.word} 
-                        targetText={word.word}
-                        targetPinyin={word.pinyin}
-                      />
-                    ))}
+                  {/* All 10 Vocabulary Words for Recording */}
+                  <div className="space-y-4">
+                    {practiceVocabulary.length > 0 ? (
+                      practiceVocabulary.map((vocab) => (
+                        <RecordingSubmission 
+                          key={vocab.word} 
+                          targetText={vocab.word}
+                          targetPinyin={vocab.pinyin}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Library className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>尚無生詞資料</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </TabsContent>
