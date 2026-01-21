@@ -169,13 +169,13 @@ const Dashboard = () => {
               </div>
               <div>
                 <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
-                  檔案解析完成
+                  技術開發中
                 </h1>
                 <p className="text-muted-foreground mb-2">
-                  您上傳的檔案已成功解析。目前顯示空白教學模組模板。
+                  目前技術端尚未開發完全，我們並無存取您上傳的檔案。請使用示例課程進行瀏覽。
                 </p>
                 <p className="text-sm text-muted-foreground mb-6">
-                  實際應用中，系統會自動填入解析後的課文、生詞、語法等內容。
+                  Technical development is in progress. No files are stored. Please explore the demo course.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">

@@ -410,22 +410,22 @@ const Index = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 text-secondary text-sm font-medium mb-6">
-                <Leaf className="w-4 h-4" />
-                ESG 與永續發展
+                <Zap className="w-4 h-4" />
+                智能教學輔助
               </div>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-6">
-                探索科技與環境的平衡
+                一鍵生成教學模組
               </h2>
               <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                本教材聚焦於台灣半導體產業面臨的永續發展挑戰，透過真實的商務情境對話與深度短文，
-                幫助學習者掌握 ESG（環境、社會、管治）相關的高階華語詞彙與表達方式。
+                上傳您的課程資料，系統將自動解析文本內容，運用 NLP 技術提取關鍵詞彙與語法結構，
+                並生成完整的教學模組，大幅提升華語教師的備課效率。
               </p>
               <ul className="space-y-3">
                 {[
-                  "深入理解半導體產業的環境影響",
-                  "學習 ESG 相關專業術語",
-                  "培養正反方論述能力",
-                  "提升商務場合的溝通技巧",
+                  "自動提取課文中的核心詞彙",
+                  "智能分析語法結構與句型",
+                  "生成互動式教學活動",
+                  "多語翻譯即時查閱",
                 ].map((item, index) => (
                   <li key={index} className="flex items-center gap-3 text-foreground">
                     <div className="w-2 h-2 rounded-full bg-gold" />
