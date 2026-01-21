@@ -51,13 +51,7 @@ const tourSteps: TourStep[] = [
   {
     id: "activities",
     title: "課堂活動 (Section 5)",
-    description: "模擬辯論、銷售演練與AI發音教練，讓學習更具互動性。",
-    path: "/activities",
-  },
-  {
-    id: "pronunciation",
-    title: "AI 發音教練",
-    description: "錄製發音後，系統會分析並顯示準確度評分，幫助學生改善發音。",
+    description: "生詞發音練習與錄音提交功能，讓學生練習並提交給教師評分。",
     path: "/activities",
   },
 ];
