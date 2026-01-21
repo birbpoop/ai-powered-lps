@@ -411,7 +411,7 @@ const Index = () => {
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 text-secondary text-sm font-medium mb-6">
                 <Zap className="w-4 h-4" />
-                智能教學輔助
+                智慧教學輔助
               </div>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-6">
                 一鍵生成教學模組
@@ -423,7 +423,7 @@ const Index = () => {
               <ul className="space-y-3">
                 {[
                   "自動提取課文中的核心詞彙",
-                  "智能分析語法結構與句型",
+                  "智慧分析語法結構與句型",
                   "生成互動式教學活動",
                   "多語翻譯即時查閱",
                 ].map((item, index) => (
@@ -443,7 +443,7 @@ const Index = () => {
               className="relative"
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-elevated relative">
-                {/* Split visual */}
+                {/* Split visual - Product illustration */}
                 <div className="absolute inset-0 flex">
                   <div className="w-1/2 bg-gradient-to-br from-navy to-navy-light flex items-center justify-center">
                     <Cpu className="w-20 h-20 text-primary-foreground/30" />
@@ -454,10 +454,10 @@ const Index = () => {
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-navy/80 via-transparent to-transparent">
                   <div className="text-center text-primary-foreground">
-                    <p className="text-3xl font-serif font-bold">矽島台灣</p>
-                    <p className="text-sm opacity-70">Silicon Island Taiwan</p>
+                    <p className="text-3xl font-serif font-bold">智慧備課</p>
+                    <p className="text-sm opacity-70">AI-Powered Preparation</p>
                     <div className="mt-2 inline-block px-3 py-1 bg-gold/20 rounded-full">
-                      <span className="text-xs text-gold">永續 × 創新</span>
+                      <span className="text-xs text-gold">效率 × 品質</span>
                     </div>
                   </div>
                 </div>
@@ -477,10 +477,10 @@ const Index = () => {
             <span className="font-serif text-xl font-semibold">華語教師備課系統</span>
           </div>
           <p className="text-primary-foreground/60 text-sm">
-            Mandarin Teacher Preparation System · TBCL Level 5
+            AI-Powered Mandarin Teacher Preparation System
           </p>
           <p className="text-primary-foreground/40 text-xs mt-4">
-            © 2024 高階商務華語教材研發團隊
+            © 2024 聯合大學華語文學系學生團隊
           </p>
         </div>
       </footer>
