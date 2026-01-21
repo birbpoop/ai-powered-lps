@@ -258,7 +258,7 @@ const Dashboard = () => {
           {/* Accordion Sections - 4 Teaching Modules */}
           <Accordion type="multiple" defaultValue={["content"]} className="space-y-4">
             {/* Module 1: 課文學習 (Content Learning) */}
-            <AccordionItem value="content" id="content" className="border border-border rounded-xl overflow-hidden bg-card">
+            <AccordionItem value="content" id="content" className="border border-border rounded-xl overflow-visible bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center">
@@ -270,7 +270,34 @@ const Dashboard = () => {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
+              <AccordionContent className="px-6 pb-6 overflow-visible">
+                {/* Silicon Island Theme Banner - Only in Demo Mode */}
+                {isDemoMode && (
+                  <div className="mb-6 p-6 rounded-xl bg-gradient-to-r from-secondary via-secondary/90 to-sage border border-secondary/30 shadow-lg">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div className="space-y-2">
+                        <h3 className="font-serif text-2xl font-bold text-secondary-foreground">
+                          矽島台灣 永續×創新
+                        </h3>
+                        <p className="text-sm text-secondary-foreground/80">
+                          Silicon Island Taiwan: Sustainability × Innovation
+                        </p>
+                        <p className="text-secondary-foreground/70">
+                          本課探討半導體產業在環境永續下的挑戰與抉擇。
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-primary-foreground/20 text-secondary-foreground text-xs font-medium">
+                          TBCL Level 5
+                        </span>
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-primary-foreground/20 text-secondary-foreground text-xs font-medium">
+                          情境主題：科技、環境
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Tabs for Conversation / Short Passage */}
                 <Tabs defaultValue="conversation" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6">
