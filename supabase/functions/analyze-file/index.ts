@@ -1,7 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-// NOTE: npm: imports are not reliably resolved in this runtime's typecheck/build pipeline.
-// Using esm.sh keeps the exact library/version while remaining Edge-compatible.
-import pdf from "https://esm.sh/pdf-parse@1.1.1?target=deno";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +8,10 @@ const corsHeaders: Record<string, string> = {
 };
 
 type AnalyzeBody = {
-  file_url: string;
+  // Preferred: send extracted plain text from the client (especially for PDFs)
+  content_text?: string;
+  // Backward-compatible: for non-PDF text files you can still provide a URL
+  file_url?: string;
   user_prompt?: string;
   file_type?: string;
 };
@@ -35,20 +36,13 @@ async function extractTextFromUrl(fileUrl: string, fileType?: string) {
 
   const contentType = fileType || res.headers.get("content-type") || "";
 
+  // PDFs must be parsed on the frontend (pdfjs-dist) and sent as plain text.
   if (contentType.includes("application/pdf")) {
-    try {
-      const arrayBuffer = await res.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      // pdf-parse accepts Buffer/Uint8Array-like input.
-      const pdfData = await pdf(bytes as unknown as Uint8Array);
-      return { ok: true as const, text: pdfData?.text ?? "" };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return {
-        ok: false as const,
-        error: `Failed to parse PDF content. Please ensure the PDF contains selectable text. ${msg}`,
-      };
-    }
+    return {
+      ok: false as const,
+      error:
+        "PDFs are not parsed on the backend. Please extract plain text on the client and send it as content_text.",
+    };
   }
 
   const buf = await res.arrayBuffer();
@@ -67,56 +61,42 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
-      return jsonResponse({ error: "Missing OPENAI_API_KEY" }, 500);
+      return jsonResponse({ error: "Missing GEMINI_API_KEY" }, 500);
     }
 
-    const { file_url, user_prompt, file_type } = (await req.json()) as AnalyzeBody;
-    if (!file_url) {
-      return jsonResponse({ error: "Missing file_url" }, 400);
+    const { content_text, file_url, user_prompt, file_type } = (await req.json()) as AnalyzeBody;
+
+    // 1) Get plain text content
+    let fileContent = "";
+    if (content_text && content_text.trim()) {
+      fileContent = content_text;
+    } else if (file_url) {
+      const extracted = await extractTextFromUrl(file_url, file_type);
+      if (!extracted.ok) {
+        return jsonResponse({ error: extracted.error }, 400);
+      }
+      fileContent = extracted.text;
+    } else {
+      return jsonResponse({ error: "Missing content_text (preferred) or file_url" }, 400);
     }
 
-    const extracted = await extractTextFromUrl(file_url, file_type);
-    if (!extracted.ok) {
-      return jsonResponse({ error: extracted.error }, 400);
-    }
+    // 2) Call Gemini
+    const truncated = safeTruncate(fileContent, 20_000);
+    const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
 
-    const fileContent = safeTruncate(extracted.text, 20_000);
-    const prompt = user_prompt?.trim() || "Please summarize and extract teaching points.";
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const openAIResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a helpful assistant analyzing file content based on user instructions.",
-          },
-          {
-            role: "user",
-            content: `User Instruction:\n${prompt}\n\nFile Content:\n${fileContent}`,
-          },
-        ],
-      }),
-    });
+    const fullPrompt =
+      "You are an expert educational AI assistant. Analyze the provided teaching material content and fulfill the user's specific instructions.\n\n" +
+      `User Instruction:\n${instruction}\n\n---\nTarget File Content:\n${truncated}`;
 
-    const data = await openAIResponse.json();
-    if (!openAIResponse.ok) {
-      return jsonResponse({
-        error: "OpenAI request failed",
-        status: openAIResponse.status,
-        details: data,
-      }, 500);
-    }
+    const resp = await model.generateContent(fullPrompt);
+    const resultText = resp.response.text();
 
-    const result = data?.choices?.[0]?.message?.content;
-    return jsonResponse({ result: result ?? "" });
+    return jsonResponse({ result: resultText ?? "" });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return jsonResponse({ error: message || "Unknown error" }, 500);

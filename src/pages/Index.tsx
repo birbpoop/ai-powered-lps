@@ -21,6 +21,10 @@ import { useLessonContext } from "@/contexts/LessonContext";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 // Demo content stats - only shown after entering demo mode
 const demoStats = [
@@ -54,7 +58,33 @@ const Index = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { startParsing, parsingStep, parsingSteps } = useLessonContext();
 
+  const isPdf = (file: File | null) => {
+    if (!file) return false;
+    return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  };
+
+  const extractPdfText = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    const pageTexts: string[] = [];
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const strings = (textContent.items as Array<{ str?: string }>).map((it) => it.str ?? "");
+      pageTexts.push(strings.join(" "));
+    }
+
+    return pageTexts.join("\n\n");
+  };
+
   const uploadToStorage = async (file: File) => {
+    // PDFs are parsed on the frontend; no need to upload to storage.
+    if (isPdf(file)) {
+      setFileUrl(null);
+      return;
+    }
+
     setIsUploading(true);
     setErrorMessage("");
     setAnalysisResult("");
@@ -85,19 +115,26 @@ const Index = () => {
   };
 
   const runAnalysis = async () => {
-    if (!fileUrl || !selectedFile) return;
+    if (!selectedFile) return;
     setIsAnalyzing(true);
     setErrorMessage("");
     setAnalysisResult("");
 
     try {
-      const { data, error } = await supabase.functions.invoke("analyze-file", {
-        body: {
-          file_url: fileUrl,
-          user_prompt: userPrompt,
-          file_type: selectedFile.type,
-        },
-      });
+      const body: Record<string, unknown> = {
+        user_prompt: userPrompt,
+        file_type: selectedFile.type,
+      };
+
+      if (isPdf(selectedFile)) {
+        const text = await extractPdfText(selectedFile);
+        body.content_text = text;
+      } else {
+        if (!fileUrl) throw new Error("File URL missing. Please re-upload the file.");
+        body.file_url = fileUrl;
+      }
+
+      const { data, error } = await supabase.functions.invoke("analyze-file", { body });
 
       if (error) throw error;
       setAnalysisResult(data?.result ?? "");
@@ -135,6 +172,12 @@ const Index = () => {
       void uploadToStorage(file);
     }
   };
+
+  const canAnalyze =
+    !!selectedFile &&
+    !isUploading &&
+    !isAnalyzing &&
+    (isPdf(selectedFile) ? true : !!fileUrl);
 
   const handleFileParsing = async (demoMode: boolean) => {
     setIsParsing(true);
@@ -465,7 +508,7 @@ const Index = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={runAnalysis}
-                      disabled={!fileUrl || isUploading || isAnalyzing}
+                      disabled={!canAnalyze}
                       className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isUploading
