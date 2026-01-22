@@ -71,6 +71,13 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing text" }, 400);
     }
 
+    // Limit max characters to 25,000 (approx. 10 pages of PDF) to prevent memory crashes
+    const SAFE_TEXT_LIMIT = 25000;
+    const safeText = text.slice(0, SAFE_TEXT_LIMIT);
+    if (text.length > SAFE_TEXT_LIMIT) {
+      console.log(`Text truncated from ${text.length} to ${SAFE_TEXT_LIMIT} chars`);
+    }
+
     // 1) Call Gemini (single request, fail-fast)
     const instruction = user_prompt?.trim() || "請依 TBCL 規範產生課程模組 JSON。";
 
@@ -115,7 +122,7 @@ Deno.serve(async (req) => {
       "3) Provide pinyin and multilingual translations (EN/JP/KR/VN) when possible.\n" +
       "4) If the input is a dialogue, populate dialogue.lines and keep essay.paragraphs minimal/empty. If it's an article, populate essay.paragraphs and keep dialogue.lines minimal/empty.\n" +
       "5) Create exactly 3 classroom activities (title + description).\n\n" +
-      `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${text}`;
+      `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${safeText}`;
 
     // Fail-fast strategy (no retry/backoff/fallback): single request to stable model.
     const model = genAI.getGenerativeModel({
