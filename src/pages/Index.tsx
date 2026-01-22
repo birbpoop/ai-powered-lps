@@ -19,7 +19,6 @@ import {
 import Navigation from "@/components/Navigation";
 import { useLessonContext } from "@/contexts/LessonContext";
 import { supabase } from "@/integrations/supabase/client";
-import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
@@ -49,14 +48,96 @@ const Index = () => {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<string>("");
   const [userPrompt, setUserPrompt] = useState<string>(
     "請協助我：1) 摘要重點 2) 列出生詞與語法點 3) 提出 3 個可操作的課堂活動。"
   );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { startParsing, parsingStep, parsingSteps } = useLessonContext();
+  const { startParsing, parsingStep, parsingSteps, setCustomLessonData } = useLessonContext();
+
+  type AiLessonJson = {
+    main_level?: string;
+    dialogue?: {
+      title?: string;
+      lines?: Array<{ speaker: string; text: string }>;
+      vocabulary?: Array<Record<string, unknown>>;
+      grammar?: Array<Record<string, unknown>>;
+    };
+    essay?: {
+      title?: string;
+      paragraphs?: string[];
+      vocabulary?: Array<Record<string, unknown>>;
+      grammar?: Array<Record<string, unknown>>;
+    };
+    activities?: Array<{ title: string; description: string }>;
+  };
+
+  const toString = (v: unknown) => (typeof v === "string" ? v : "");
+  const toNumber = (v: unknown) => {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const normalizeLessonJson = (raw: AiLessonJson) => {
+    const dialogueLines = (raw.dialogue?.lines ?? [])
+      .filter((l) => l && typeof l.speaker === "string" && typeof l.text === "string")
+      .map((l) => ({ speaker: l.speaker, text: l.text }));
+
+    const speakers = Array.from(new Set(dialogueLines.map((l) => l.speaker)));
+
+    const mapVocab = (arr: Array<Record<string, unknown>> | undefined) =>
+      (arr ?? []).map((v) => ({
+        word: toString(v.word),
+        pinyin: toString(v.pinyin),
+        level: Math.max(0, Math.min(7, toNumber(v.level))),
+        english: toString(v.english),
+        partOfSpeech: toString(v.partOfSpeech),
+        example: toString(v.example),
+        japanese: toString(v.japanese),
+        korean: toString(v.korean),
+        vietnamese: toString(v.vietnamese),
+      }))
+      .filter((v) => v.word.trim().length > 0);
+
+    const mapGrammar = (arr: Array<Record<string, unknown>> | undefined) =>
+      (arr ?? []).map((g) => ({
+        pattern: toString(g.pattern),
+        level: Math.max(1, Math.min(7, toNumber(g.level) || 1)),
+        english: toString(g.english),
+        example: toString(g.example),
+      }))
+      .filter((g) => g.pattern.trim().length > 0);
+
+    const lessonData = {
+      main_level: raw.main_level,
+      dialogue: {
+        content: {
+          title: raw.dialogue?.title || "自訂課程（對話）",
+          warmUp: [],
+          characters: speakers.map((name) => ({ name, role: "" })),
+          setting: "",
+          lines: dialogueLines,
+        },
+        vocabulary: mapVocab(raw.dialogue?.vocabulary),
+        grammar: mapGrammar(raw.dialogue?.grammar),
+        references: [],
+      },
+      essay: {
+        content: {
+          title: raw.essay?.title || "自訂課程（短文）",
+          warmUp: [],
+          paragraphs: (raw.essay?.paragraphs ?? []).filter((p) => typeof p === "string" && p.trim().length > 0),
+        },
+        vocabulary: mapVocab(raw.essay?.vocabulary),
+        grammar: mapGrammar(raw.essay?.grammar),
+        references: [],
+      },
+      activities: (raw.activities ?? []).filter((a) => a?.title && a?.description),
+    };
+
+    return lessonData;
+  };
 
   const isPdf = (file: File | null) => {
     if (!file) return false;
@@ -87,7 +168,6 @@ const Index = () => {
 
     setIsUploading(true);
     setErrorMessage("");
-    setAnalysisResult("");
     setFileUrl(null);
 
     try {
@@ -118,7 +198,6 @@ const Index = () => {
     if (!selectedFile) return;
     setIsAnalyzing(true);
     setErrorMessage("");
-    setAnalysisResult("");
 
     try {
       const body: Record<string, unknown> = {
@@ -137,7 +216,10 @@ const Index = () => {
       const { data, error } = await supabase.functions.invoke("analyze-file", { body });
 
       if (error) throw error;
-      setAnalysisResult(data?.result ?? "");
+      const lessonJson = data as AiLessonJson;
+      const parsedLesson = normalizeLessonJson(lessonJson);
+      setCustomLessonData(parsedLesson);
+      navigate("/dashboard");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErrorMessage(msg || "Analysis failed");
@@ -202,7 +284,7 @@ const Index = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".txt,.md,.csv,.pdf,.docx"
+        accept=".txt,.md,.csv,.pdf"
         className="hidden"
         onChange={handleFileChange}
       />
@@ -538,14 +620,7 @@ const Index = () => {
               </div>
             )}
 
-            {analysisResult && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <p className="text-sm font-medium text-foreground mb-3">AI 分析結果</p>
-                <div className="text-sm text-foreground leading-relaxed">
-                  <ReactMarkdown>{analysisResult}</ReactMarkdown>
-                </div>
-              </div>
-            )}
+            {/* Note: analysis result is now structured JSON and immediately hydrates the Dashboard view. */}
           </motion.div>
 
           {/* Quick Start - Demo Mode */}

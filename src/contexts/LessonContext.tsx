@@ -14,6 +14,8 @@ import {
 } from "@/data/content";
 
 interface LessonData {
+  /** Optional: AI estimated overall TBCL level label, e.g. "TBCL Level 4" */
+  main_level?: string;
   dialogue: {
     content: typeof dialogueContent;
     vocabulary: VocabularyItem[];
@@ -26,6 +28,8 @@ interface LessonData {
     grammar: GrammarPoint[];
     references: Reference[];
   };
+  /** Optional: AI-generated classroom activities */
+  activities?: Array<{ title: string; description: string }>;
 }
 
 // Empty template for upload mode
@@ -52,6 +56,8 @@ interface LessonContextType {
   parsingSteps: string[];
   startParsing: (demoMode?: boolean) => Promise<void>;
   resetParsing: () => void;
+  /** Overwrite lesson data from an external analysis result (non-demo). */
+  setCustomLessonData: (data: LessonData) => void;
 }
 
 const parsingStepsData = [
@@ -124,6 +130,14 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
     setParsingStep(0);
   };
 
+  const setCustomLessonData = (data: LessonData) => {
+    setLessonData(data);
+    setIsParsed(true);
+    setIsParsingComplete(true);
+    setIsDemoMode(false);
+    setParsingStep(parsingStepsData.length - 1);
+  };
+
   return (
     <LessonContext.Provider
       value={{
@@ -135,6 +149,7 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
         parsingSteps: parsingStepsData,
         startParsing,
         resetParsing,
+        setCustomLessonData,
       }}
     >
       {children}
