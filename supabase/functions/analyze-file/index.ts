@@ -22,6 +22,23 @@ type AnalyzeBody = {
   file_type?: string;
 };
 
+type AiLessonJson = {
+  main_level?: string;
+  dialogue?: {
+    title?: string;
+    lines?: Array<{ speaker: string; text: string }>;
+    vocabulary?: Array<Record<string, unknown>>;
+    grammar?: Array<Record<string, unknown>>;
+  };
+  essay?: {
+    title?: string;
+    paragraphs?: string[];
+    vocabulary?: Array<Record<string, unknown>>;
+    grammar?: Array<Record<string, unknown>>;
+  };
+  activities?: Array<{ title: string; description: string }>;
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -115,6 +132,26 @@ function validateStorageFileUrl(fileUrl: string) {
   return { ok: true as const };
 }
 
+function extractJsonObject(text: string) {
+  // Fast path
+  try {
+    return { ok: true as const, value: JSON.parse(text) };
+  } catch {
+    // Attempt to salvage first JSON object in the response
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      const maybe = text.slice(start, end + 1);
+      try {
+        return { ok: true as const, value: JSON.parse(maybe) };
+      } catch {
+        // fall through
+      }
+    }
+    return { ok: false as const, error: "Model returned non-JSON output" };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -159,22 +196,72 @@ Deno.serve(async (req) => {
     }
 
     // 2) Call Gemini
-    const truncated = safeTruncate(fileContent, 20_000);
-    const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
+    const truncated = safeTruncate(fileContent, 15_000);
+    const instruction = user_prompt?.trim() || "請依 TBCL 規範產生課程模組 JSON。";
 
     const genAI = new GoogleGenerativeAI(apiKey);
     // Latest "Flash" model id per Google Gemini API docs (Dec 2025).
     // Note: this is a *preview* model and may have different availability/rate limits.
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const jsonSchemaHint = `{
+  "main_level": "string (e.g., TBCL Level 4)",
+  "dialogue": {
+    "title": "string",
+    "lines": [ { "speaker": "string", "text": "string" } ],
+    "vocabulary": [
+      {
+        "word": "string",
+        "pinyin": "string",
+        "level": "number (1-7, use 0 if unknown)",
+        "english": "string",
+        "partOfSpeech": "string",
+        "example": "string (complete sentence)",
+        "japanese": "string",
+        "korean": "string",
+        "vietnamese": "string"
+      }
+    ],
+    "grammar": [ { "pattern": "string", "level": "number", "english": "string", "example": "string" } ]
+  },
+  "essay": {
+    "title": "string",
+    "paragraphs": ["string"],
+    "vocabulary": [/* same as above */],
+    "grammar": [/* same as above */]
+  },
+  "activities": [ { "title": "string", "description": "string" } ]
+}`;
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3-flash-preview",
+      generationConfig: {
+        // Ask Gemini to respond as JSON (best-effort); we also validate/parse below.
+        responseMimeType: "application/json",
+        temperature: 0.2,
+      },
+    });
 
     const fullPrompt =
-      "You are an expert educational AI assistant. Analyze the provided teaching material content and fulfill the user's specific instructions.\n\n" +
-      `User Instruction:\n${instruction}\n\n---\nTarget File Content:\n${truncated}`;
+      "You are an expert Mandarin teaching assistant specialized in TBCL (Taiwan Benchmarks for the Chinese Language). " +
+      "Return ONLY strict valid JSON. Do not wrap in markdown. Do not add commentary.\n\n" +
+      "Your JSON MUST match this schema (keys and value types):\n" +
+      jsonSchemaHint +
+      "\n\nRequirements:\n" +
+      "1) Estimate overall TBCL level for the text as main_level (TBCL Level 1-7).\n" +
+      "2) Extract key vocabulary; assign TBCL level (1-7) per word; use 0 if unknown/proper noun.\n" +
+      "3) Provide pinyin and multilingual translations (EN/JP/KR/VN) when possible.\n" +
+      "4) If the input is a dialogue, populate dialogue.lines and keep essay.paragraphs minimal/empty. If it's an article, populate essay.paragraphs and keep dialogue.lines minimal/empty.\n" +
+      "5) Create exactly 3 classroom activities (title + description).\n\n" +
+      `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${truncated}`;
 
     const resp = await model.generateContent(fullPrompt);
-    const resultText = resp.response.text();
+    const raw = resp.response.text() ?? "";
+    const parsed = extractJsonObject(raw);
+    if (!parsed.ok) {
+      return jsonResponse({ error: parsed.error }, 500);
+    }
 
-    return jsonResponse({ result: resultText ?? "" });
+    // Return the parsed JSON object directly (frontend will hydrate LessonData)
+    return jsonResponse(parsed.value as AiLessonJson);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return jsonResponse({ error: message || "Unknown error" }, 500);
