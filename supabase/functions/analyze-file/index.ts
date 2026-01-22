@@ -1,3 +1,8 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// NOTE: npm: imports are not reliably resolved in this runtime's typecheck/build pipeline.
+// Using esm.sh keeps the exact library/version while remaining Edge-compatible.
+import pdf from "https://esm.sh/pdf-parse@1.1.1?target=deno";
+
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -29,11 +34,21 @@ async function extractTextFromUrl(fileUrl: string, fileType?: string) {
   }
 
   const contentType = fileType || res.headers.get("content-type") || "";
+
   if (contentType.includes("application/pdf")) {
-    return {
-      ok: false as const,
-      error: "PDF parsing is currently limited. Please upload TXT/MD/CSV files.",
-    };
+    try {
+      const arrayBuffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      // pdf-parse accepts Buffer/Uint8Array-like input.
+      const pdfData = await pdf(bytes as unknown as Uint8Array);
+      return { ok: true as const, text: pdfData?.text ?? "" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        ok: false as const,
+        error: `Failed to parse PDF content. Please ensure the PDF contains selectable text. ${msg}`,
+      };
+    }
   }
 
   const buf = await res.arrayBuffer();
