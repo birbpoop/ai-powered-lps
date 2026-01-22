@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.24.1";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -7,19 +7,16 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Simple in-memory per-instance rate limit (best-effort): 5 requests / 60s / IP.
-// Note: Edge runtimes may spin up multiple isolates; this is not globally consistent.
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 5;
-const ipHits = new Map<string, number[]>();
+/**
+ * Extreme-simplification mode:
+ * - Frontend parses files (PDF/CSV/TXT/MD) into plain text.
+ * - Backend ONLY accepts `{ text: string, user_prompt?: string }`.
+ * - Single Gemini call (gemini-1.5-flash), no retries/backoff/fallback.
+ */
 
 type AnalyzeBody = {
-  // Preferred: send extracted plain text from the client (especially for PDFs)
-  content_text?: string;
-  // Backward-compatible: for non-PDF text files you can still provide a URL
-  file_url?: string;
+  text?: string;
   user_prompt?: string;
-  file_type?: string;
 };
 
 type AiLessonJson = {
@@ -46,108 +43,10 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function safeTruncate(input: string, maxChars: number) {
-  if (input.length <= maxChars) return input;
-  return input.slice(0, maxChars) + "\n\n[...truncated...]";
-}
-
-async function extractTextFromUrl(fileUrl: string, fileType?: string) {
-  const res = await fetch(fileUrl);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch file: ${res.status} ${res.statusText}`);
-  }
-
-  const contentType = fileType || res.headers.get("content-type") || "";
-
-  // PDFs must be parsed on the frontend (pdfjs-dist) and sent as plain text.
-  if (contentType.includes("application/pdf")) {
-    return {
-      ok: false as const,
-      error:
-        "PDFs are not parsed on the backend. Please extract plain text on the client and send it as content_text.",
-    };
-  }
-
-  const buf = await res.arrayBuffer();
-  // Assume UTF-8 for now (text/csv/md)
-  const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
-  return { ok: true as const, text };
-}
-
-function getClientIp(req: Request) {
-  // Common proxies/CDNs
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  const cf = req.headers.get("cf-connecting-ip");
-  if (cf) return cf.trim();
-  const realIp = req.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-  return "unknown";
-}
-
-function isRateLimited(ip: string) {
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
-  const hits = ipHits.get(ip) ?? [];
-  const recent = hits.filter((t) => t >= windowStart);
-  if (recent.length >= RATE_LIMIT_MAX) {
-    ipHits.set(ip, recent);
-    return true;
-  }
-  recent.push(now);
-  ipHits.set(ip, recent);
-  return false;
-}
-
-function validateStorageFileUrl(fileUrl: string) {
-  let url: URL;
-  try {
-    url = new URL(fileUrl);
-  } catch {
-    return { ok: false as const, reason: "Invalid URL" };
-  }
-
-  if (url.protocol !== "https:") {
-    return { ok: false as const, reason: "Only HTTPS URLs are allowed" };
-  }
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  let allowedHost = "";
-  try {
-    allowedHost = supabaseUrl ? new URL(supabaseUrl).hostname : "";
-  } catch {
-    allowedHost = "";
-  }
-
-  if (!allowedHost || url.hostname !== allowedHost) {
-    return { ok: false as const, reason: "URL host not allowed" };
-  }
-
-  // Only allow requests to the Storage object endpoints for this project.
-  // (Supports both public and signed URLs)
-  if (!url.pathname.startsWith("/storage/v1/object/")) {
-    return { ok: false as const, reason: "URL path not allowed" };
-  }
-
-  return { ok: true as const };
-}
-
-function extractJsonObject(text: string) {
-  // Fast path
+function parseStrictJson(text: string) {
   try {
     return { ok: true as const, value: JSON.parse(text) };
   } catch {
-    // Attempt to salvage first JSON object in the response
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      const maybe = text.slice(start, end + 1);
-      try {
-        return { ok: true as const, value: JSON.parse(maybe) };
-      } catch {
-        // fall through
-      }
-    }
     return { ok: false as const, error: "Model returned non-JSON output" };
   }
 }
@@ -162,41 +61,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Rate limit *all* POST calls (including invalid ones) by IP.
-    const ip = getClientIp(req);
-    if (isRateLimited(ip)) {
-      return jsonResponse({ error: "Too many requests. Please try again in a minute." }, 429);
-    }
-
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       return jsonResponse({ error: "Missing GEMINI_API_KEY" }, 500);
     }
 
-    const { content_text, file_url, user_prompt, file_type } = (await req.json()) as AnalyzeBody;
-
-    // 1) Get plain text content
-    let fileContent = "";
-    if (content_text && content_text.trim()) {
-      fileContent = content_text;
-    } else if (file_url) {
-      // SSRF protection: allow only Storage URLs for this project.
-      const valid = validateStorageFileUrl(file_url);
-      if (!valid.ok) {
-        return jsonResponse({ error: valid.reason }, 403);
-      }
-
-      const extracted = await extractTextFromUrl(file_url, file_type);
-      if (!extracted.ok) {
-        return jsonResponse({ error: extracted.error }, 400);
-      }
-      fileContent = extracted.text;
-    } else {
-      return jsonResponse({ error: "Missing content_text (preferred) or file_url" }, 400);
+    const { text, user_prompt } = (await req.json()) as AnalyzeBody;
+    if (!text || !text.trim()) {
+      return jsonResponse({ error: "Missing text" }, 400);
     }
 
-    // 2) Call Gemini
-    const truncated = safeTruncate(fileContent, 15_000);
+    // 1) Call Gemini (single request, fail-fast)
     const instruction = user_prompt?.trim() || "請依 TBCL 規範產生課程模組 JSON。";
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -240,7 +115,7 @@ Deno.serve(async (req) => {
       "3) Provide pinyin and multilingual translations (EN/JP/KR/VN) when possible.\n" +
       "4) If the input is a dialogue, populate dialogue.lines and keep essay.paragraphs minimal/empty. If it's an article, populate essay.paragraphs and keep dialogue.lines minimal/empty.\n" +
       "5) Create exactly 3 classroom activities (title + description).\n\n" +
-      `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${truncated}`;
+      `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${text}`;
 
     // Fail-fast strategy (no retry/backoff/fallback): single request to stable model.
     const model = genAI.getGenerativeModel({
@@ -253,7 +128,7 @@ Deno.serve(async (req) => {
 
     const resp = await model.generateContent(fullPrompt);
     const raw = resp.response.text() ?? "";
-    const parsed = extractJsonObject(raw);
+    const parsed = parseStrictJson(raw);
     if (!parsed.ok) {
       return jsonResponse({ error: parsed.error }, 500);
     }
@@ -262,8 +137,7 @@ Deno.serve(async (req) => {
     return jsonResponse(parsed.value as AiLessonJson);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    // If upstream is overloaded, return 503 so the client can present a "try again" UX.
-    const status = /overloaded/i.test(message) ? 503 : 500;
+    const status = /\b503\b/.test(message) || /overloaded/i.test(message) ? 503 : 500;
     return jsonResponse({ error: message || "Unknown error" }, status);
   }
 });
