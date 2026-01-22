@@ -87,7 +87,9 @@ Deno.serve(async (req) => {
     const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Latest "Flash" model id per Google Gemini API docs (Dec 2025).
+    // Note: this is a *preview* model and may have different availability/rate limits.
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const fullPrompt =
       "You are an expert educational AI assistant. Analyze the provided teaching material content and fulfill the user's specific instructions.\n\n" +
