@@ -42,11 +42,11 @@ const Navigation = () => {
             <div className={`w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center transition-all ${
               isScrolled || !isHome ? "bg-background" : "bg-background/20 backdrop-blur-sm"
             }`}>
-              <img src="/favicon.png" alt="華語教師備課系統" className="w-full h-full object-contain" />
+              <img src="/favicon.png" alt="智慧華語備課系統" className="w-full h-full object-contain" />
             </div>
             <div className="hidden sm:block">
               <span className="text-primary-foreground font-serif font-semibold text-lg">
-                華語備課系統
+                智慧華語備課系統
               </span>
               <span className="block text-primary-foreground/60 text-xs">
                 TBCL Level 5

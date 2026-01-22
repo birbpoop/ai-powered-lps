@@ -304,15 +304,10 @@ const Index = () => {
                 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold text-primary-foreground leading-tight tracking-tight"
               >
                 智慧華語備課系統
+                <span className="block font-serif text-2xl sm:text-3xl lg:text-4xl text-gold font-medium mt-3">
+                  AI-Powered Lesson Preparation System
+                </span>
               </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-                className="font-serif text-2xl sm:text-3xl lg:text-4xl text-gold font-medium"
-              >
-                AI-Powered Lesson Preparation System
-              </motion.p>
             </div>
 
             {/* Subtitle - Product Description */}
@@ -438,7 +433,7 @@ const Index = () => {
                 {isDragging ? "放開以上傳檔案" : "檔案上傳"}
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                支援格式：.txt, .md, .csv（PDF 暫不支援解析）
+                支援格式：.txt, .md, .csv, .pdf
               </p>
               <button
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gold text-navy font-medium hover:bg-gold-dark transition-all"
@@ -605,13 +600,13 @@ const Index = () => {
       <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-primary text-primary-foreground">
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg overflow-hidden bg-background">
-              <img src="/favicon.png" alt="華語教師備課系統" className="w-full h-full object-contain" />
-            </div>
-            <span className="font-serif text-xl font-semibold">華語教師備課系統</span>
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-background">
+                <img src="/favicon.png" alt="智慧華語備課系統" className="w-full h-full object-contain" />
+              </div>
+              <span className="font-serif text-xl font-semibold">智慧華語備課系統</span>
           </div>
           <p className="text-primary-foreground/60 text-sm">
-            AI-Powered Mandarin Teacher Preparation System
+              AI-Powered Lesson Preparation System
           </p>
           <p className="text-primary-foreground/40 text-xs mt-4">
             © 2026 聯合大學華語文學系學生團隊

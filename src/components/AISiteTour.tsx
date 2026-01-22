@@ -15,7 +15,7 @@ interface TourStep {
 const tourSteps: TourStep[] = [
   {
     id: "welcome",
-    title: "歡迎使用華語教師備課系統",
+    title: "歡迎使用智慧華語備課系統",
     description: "這是一個專為華語教師設計的數位備課平台。讓我帶您快速了解各項功能！",
   },
   {
