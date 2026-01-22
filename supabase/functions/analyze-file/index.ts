@@ -7,6 +7,12 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Simple in-memory per-instance rate limit (best-effort): 5 requests / 60s / IP.
+// Note: Edge runtimes may spin up multiple isolates; this is not globally consistent.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 5;
+const ipHits = new Map<string, number[]>();
+
 type AnalyzeBody = {
   // Preferred: send extracted plain text from the client (especially for PDFs)
   content_text?: string;
@@ -51,6 +57,64 @@ async function extractTextFromUrl(fileUrl: string, fileType?: string) {
   return { ok: true as const, text };
 }
 
+function getClientIp(req: Request) {
+  // Common proxies/CDNs
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  return "unknown";
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+  const hits = ipHits.get(ip) ?? [];
+  const recent = hits.filter((t) => t >= windowStart);
+  if (recent.length >= RATE_LIMIT_MAX) {
+    ipHits.set(ip, recent);
+    return true;
+  }
+  recent.push(now);
+  ipHits.set(ip, recent);
+  return false;
+}
+
+function validateStorageFileUrl(fileUrl: string) {
+  let url: URL;
+  try {
+    url = new URL(fileUrl);
+  } catch {
+    return { ok: false as const, reason: "Invalid URL" };
+  }
+
+  if (url.protocol !== "https:") {
+    return { ok: false as const, reason: "Only HTTPS URLs are allowed" };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  let allowedHost = "";
+  try {
+    allowedHost = supabaseUrl ? new URL(supabaseUrl).hostname : "";
+  } catch {
+    allowedHost = "";
+  }
+
+  if (!allowedHost || url.hostname !== allowedHost) {
+    return { ok: false as const, reason: "URL host not allowed" };
+  }
+
+  // Only allow requests to the Storage object endpoints for this project.
+  // (Supports both public and signed URLs)
+  if (!url.pathname.startsWith("/storage/v1/object/")) {
+    return { ok: false as const, reason: "URL path not allowed" };
+  }
+
+  return { ok: true as const };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -61,6 +125,12 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rate limit *all* POST calls (including invalid ones) by IP.
+    const ip = getClientIp(req);
+    if (isRateLimited(ip)) {
+      return jsonResponse({ error: "Too many requests. Please try again in a minute." }, 429);
+    }
+
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       return jsonResponse({ error: "Missing GEMINI_API_KEY" }, 500);
@@ -73,6 +143,12 @@ Deno.serve(async (req) => {
     if (content_text && content_text.trim()) {
       fileContent = content_text;
     } else if (file_url) {
+      // SSRF protection: allow only Storage URLs for this project.
+      const valid = validateStorageFileUrl(file_url);
+      if (!valid.ok) {
+        return jsonResponse({ error: valid.reason }, 403);
+      }
+
       const extracted = await extractTextFromUrl(file_url, file_type);
       if (!extracted.ok) {
         return jsonResponse({ error: extracted.error }, 400);
