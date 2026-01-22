@@ -1,1 +1,5 @@
 project_id = "yumgardtfczzonwtdrcf"
+
+# Allow public (non-authenticated) browser calls to this function.
+[functions.analyze-file]
+verify_jwt = false
