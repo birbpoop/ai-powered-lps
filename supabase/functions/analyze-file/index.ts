@@ -152,65 +152,6 @@ function extractJsonObject(text: string) {
   }
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function isModelOverloadedError(err: unknown) {
-  const msg = err instanceof Error ? err.message : String(err);
-  // The GoogleGenerativeAI SDK embeds status text in the thrown message
-  return /\b503\b/.test(msg) && /overloaded/i.test(msg);
-}
-
-async function generateJsonWithRetry(opts: {
-  apiKey: string;
-  prompt: string;
-}) {
-  // Strategy:
-  // 1) Try preferred preview model
-  // 2) On 503 overload, retry with exponential backoff
-  // 3) If still overloaded, fall back to more available models
-  const models = [
-    "gemini-3-flash-preview",
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-  ];
-
-  const genAI = new GoogleGenerativeAI(opts.apiKey);
-
-  const maxAttemptsPerModel = 3;
-  for (const modelId of models) {
-    for (let attempt = 1; attempt <= maxAttemptsPerModel; attempt++) {
-      try {
-        const model = genAI.getGenerativeModel({
-          model: modelId,
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.2,
-          },
-        });
-
-        const resp = await model.generateContent(opts.prompt);
-        return resp.response.text() ?? "";
-      } catch (err) {
-        if (!isModelOverloadedError(err)) throw err;
-
-        // Backoff + jitter: 400ms, 900ms, 1600ms (+ up to 200ms jitter)
-        const base = 200;
-        const backoff = base + attempt * attempt * 250;
-        const jitter = Math.floor(Math.random() * 200);
-        await sleep(backoff + jitter);
-        continue;
-      }
-    }
-  }
-
-  // If we get here, all models were overloaded
-  throw new Error(
-    "AI model is currently overloaded. Please try again in a minute."
-  );
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -259,8 +200,6 @@ Deno.serve(async (req) => {
     const instruction = user_prompt?.trim() || "請依 TBCL 規範產生課程模組 JSON。";
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Latest "Flash" model id per Google Gemini API docs (Dec 2025).
-    // Note: this is a *preview* model and may have different availability/rate limits.
     const jsonSchemaHint = `{
   "main_level": "string (e.g., TBCL Level 4)",
   "dialogue": {
@@ -303,7 +242,17 @@ Deno.serve(async (req) => {
       "5) Create exactly 3 classroom activities (title + description).\n\n" +
       `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${truncated}`;
 
-    const raw = await generateJsonWithRetry({ apiKey, prompt: fullPrompt });
+    // Fail-fast strategy (no retry/backoff/fallback): single request to stable model.
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.2,
+      },
+    });
+
+    const resp = await model.generateContent(fullPrompt);
+    const raw = resp.response.text() ?? "";
     const parsed = extractJsonObject(raw);
     if (!parsed.ok) {
       return jsonResponse({ error: parsed.error }, 500);
