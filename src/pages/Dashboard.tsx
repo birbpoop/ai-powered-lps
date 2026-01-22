@@ -172,7 +172,7 @@ const Dashboard = () => {
                   技術開發中
                 </h1>
                 <p className="text-muted-foreground mb-2">
-                  目前技術端尚未開發完全，我們並無存取您上傳的檔案。請使用示例課程進行瀏覽。
+                  目前技術端尚未開發完全，我們並無存取您上傳的檔案。請使用示範課程進行瀏覽。
                 </p>
                 <p className="text-sm text-muted-foreground mb-6">
                   Technical development is in progress. No files are stored. Please explore the demo course.

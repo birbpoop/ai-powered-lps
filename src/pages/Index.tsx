@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useLessonContext } from "@/contexts/LessonContext";
+import { supabase } from "@/integrations/supabase/client";
+import ReactMarkdown from "react-markdown";
+import { Textarea } from "@/components/ui/textarea";
 
 // Demo content stats - only shown after entering demo mode
 const demoStats = [
@@ -38,9 +41,73 @@ const parsingIcons = [FileText, Brain, Sparkles, CheckCircle2];
 const Index = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string>("");
+  const [userPrompt, setUserPrompt] = useState<string>(
+    "請協助我：1) 摘要重點 2) 列出生詞與語法點 3) 提出 3 個可操作的課堂活動。"
+  );
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { startParsing, parsingStep, parsingSteps } = useLessonContext();
+
+  const uploadToStorage = async (file: File) => {
+    setIsUploading(true);
+    setErrorMessage("");
+    setAnalysisResult("");
+    setFileUrl(null);
+
+    try {
+      const path = `${crypto.randomUUID()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("user-uploads")
+        .upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("user-uploads").getPublicUrl(path);
+      if (!data?.publicUrl) {
+        throw new Error("Failed to create public URL");
+      }
+      setFileUrl(data.publicUrl);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setErrorMessage(msg || "Upload failed");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const runAnalysis = async () => {
+    if (!fileUrl || !selectedFile) return;
+    setIsAnalyzing(true);
+    setErrorMessage("");
+    setAnalysisResult("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-file", {
+        body: {
+          file_url: fileUrl,
+          user_prompt: userPrompt,
+          file_type: selectedFile.type,
+        },
+      });
+
+      if (error) throw error;
+      setAnalysisResult(data?.result ?? "");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setErrorMessage(msg || "Analysis failed");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -54,12 +121,18 @@ const Index = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    handleFileParsing(false); // Upload mode - empty template
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      void uploadToStorage(file);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      handleFileParsing(false); // Upload mode - empty template
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      void uploadToStorage(file);
     }
   };
 
@@ -86,7 +159,7 @@ const Index = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".docx,.pdf,.txt"
+        accept=".txt,.md,.csv,.pdf,.docx"
         className="hidden"
         onChange={handleFileChange}
       />
@@ -365,7 +438,7 @@ const Index = () => {
                 {isDragging ? "放開以上傳檔案" : "檔案上傳"}
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                支援格式：.docx, .pdf, .txt
+                支援格式：.txt, .md, .csv（PDF 暫不支援解析）
               </p>
               <button
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gold text-navy font-medium hover:bg-gold-dark transition-all"
@@ -374,6 +447,67 @@ const Index = () => {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+          </motion.div>
+
+          {/* Upload + Analyze */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15 }}
+            className="mt-6 space-y-4"
+          >
+            {selectedFile && (
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-muted-foreground">已選擇檔案</p>
+                    <p className="font-medium text-foreground truncate">{selectedFile.name}</p>
+                    {fileUrl && (
+                      <p className="text-xs text-muted-foreground truncate mt-1">{fileUrl}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={runAnalysis}
+                      disabled={!fileUrl || isUploading || isAnalyzing}
+                      className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isUploading
+                        ? "上傳中..."
+                        : isAnalyzing
+                          ? "分析中..."
+                          : "開始分析"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-medium text-foreground">分析指令（Prompt）</p>
+                  <Textarea
+                    value={userPrompt}
+                    onChange={(e) => setUserPrompt(e.target.value)}
+                    className="min-h-[100px]"
+                    placeholder="請輸入你希望 AI 對檔案做什麼分析..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                {errorMessage}
+              </div>
+            )}
+
+            {analysisResult && (
+              <div className="rounded-xl border border-border bg-card p-5">
+                <p className="text-sm font-medium text-foreground mb-3">AI 分析結果</p>
+                <div className="text-sm text-foreground leading-relaxed">
+                  <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Quick Start - Demo Mode */}
@@ -480,7 +614,7 @@ const Index = () => {
             AI-Powered Mandarin Teacher Preparation System
           </p>
           <p className="text-primary-foreground/40 text-xs mt-4">
-            © 2024 聯合大學華語文學系學生團隊
+            © 2026 聯合大學華語文學系學生團隊
           </p>
         </div>
       </footer>
