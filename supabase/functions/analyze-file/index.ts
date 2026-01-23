@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     }
 
     // 2) Call Gemini
-    const truncated = safeTruncate(fileContent, 20_000);
+    const truncated = safeTruncate(fileContent, 25_000);
     const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
 
     const genAI = new GoogleGenerativeAI(apiKey);
