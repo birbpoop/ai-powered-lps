@@ -40,8 +40,7 @@ async function extractTextFromUrl(fileUrl: string, fileType?: string) {
   if (contentType.includes("application/pdf")) {
     return {
       ok: false as const,
-      error:
-        "PDFs are not parsed on the backend. Please extract plain text on the client and send it as content_text.",
+      error: "PDFs are not parsed on the backend. Please extract plain text on the client and send it as content_text.",
     };
   }
 
@@ -87,7 +86,7 @@ Deno.serve(async (req) => {
     const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const fullPrompt =
       "You are an expert educational AI assistant. Analyze the provided teaching material content and fulfill the user's specific instructions.\n\n" +
