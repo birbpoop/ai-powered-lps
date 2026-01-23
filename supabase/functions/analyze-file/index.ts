@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
 
     // Fail-fast strategy (no retry/backoff/fallback): single request to stable model.
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.2,
