@@ -1,5 +1,4 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.24.1";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +10,7 @@ const corsHeaders: Record<string, string> = {
  * Extreme-simplification mode:
  * - Frontend parses files (PDF/CSV/TXT/MD) into plain text.
  * - Backend ONLY accepts `{ text: string, user_prompt?: string }`.
- * - Single Gemini call (gemini-1.5-flash), no retries/backoff/fallback.
+ * - Single Lovable AI Gateway call (gemini-3-flash-preview), no retries/backoff/fallback.
  */
 
 type AnalyzeBody = {
@@ -61,9 +60,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
-      return jsonResponse({ error: "Missing GEMINI_API_KEY" }, 500);
+      return jsonResponse({ error: "Missing LOVABLE_API_KEY" }, 500);
     }
 
     const { text, user_prompt } = (await req.json()) as AnalyzeBody;
@@ -78,10 +77,9 @@ Deno.serve(async (req) => {
       console.log(`Text truncated from ${text.length} to ${SAFE_TEXT_LIMIT} chars`);
     }
 
-    // 1) Call Gemini (single request, fail-fast)
+    // Build prompt
     const instruction = user_prompt?.trim() || "請依 TBCL 規範產生課程模組 JSON。";
 
-    const genAI = new GoogleGenerativeAI(apiKey);
     const jsonSchemaHint = `{
   "main_level": "string (e.g., TBCL Level 4)",
   "dialogue": {
@@ -111,7 +109,7 @@ Deno.serve(async (req) => {
   "activities": [ { "title": "string", "description": "string" } ]
 }`;
 
-    const fullPrompt =
+    const systemPrompt =
       "You are an expert Mandarin teaching assistant specialized in TBCL (Taiwan Benchmarks for the Chinese Language). " +
       "Return ONLY strict valid JSON. Do not wrap in markdown. Do not add commentary.\n\n" +
       "Your JSON MUST match this schema (keys and value types):\n" +
@@ -121,22 +119,46 @@ Deno.serve(async (req) => {
       "2) Extract key vocabulary; assign TBCL level (1-7) per word; use 0 if unknown/proper noun.\n" +
       "3) Provide pinyin and multilingual translations (EN/JP/KR/VN) when possible.\n" +
       "4) If the input is a dialogue, populate dialogue.lines and keep essay.paragraphs minimal/empty. If it's an article, populate essay.paragraphs and keep dialogue.lines minimal/empty.\n" +
-      "5) Create exactly 3 classroom activities (title + description).\n\n" +
-      `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${safeText}`;
+      "5) Create exactly 3 classroom activities (title + description).";
 
-    // Fail-fast strategy (no retry/backoff/fallback): single request to stable model.
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
+    const userMessage = `User Instruction:\n${instruction}\n\n---\nTarget Text:\n${safeText}`;
+
+    // Call Lovable AI Gateway
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        temperature: 0.2,
+      }),
     });
 
-    const resp = await model.generateContent(fullPrompt);
-    const raw = resp.response.text() ?? "";
-    const parsed = parseStrictJson(raw);
+    if (!response.ok) {
+      if (response.status === 429) {
+        return jsonResponse({ error: "Rate limit exceeded. Please try again later." }, 429);
+      }
+      if (response.status === 402) {
+        return jsonResponse({ error: "Payment required. Please add credits to your Lovable workspace." }, 402);
+      }
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      return jsonResponse({ error: `AI gateway error: ${response.status}` }, 500);
+    }
+
+    const aiResponse = await response.json();
+    const rawContent = aiResponse.choices?.[0]?.message?.content ?? "";
+
+    // Parse JSON from response
+    const parsed = parseStrictJson(rawContent);
     if (!parsed.ok) {
+      console.error("Failed to parse AI response:", rawContent.slice(0, 500));
       return jsonResponse({ error: parsed.error }, 500);
     }
 
@@ -144,6 +166,7 @@ Deno.serve(async (req) => {
     return jsonResponse(parsed.value as AiLessonJson);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error("analyze-file error:", message);
     const status = /\b503\b/.test(message) || /overloaded/i.test(message) ? 503 : 500;
     return jsonResponse({ error: message || "Unknown error" }, status);
   }
