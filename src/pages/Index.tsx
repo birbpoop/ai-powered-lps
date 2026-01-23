@@ -19,8 +19,8 @@ import {
 import Navigation from "@/components/Navigation";
 import { useLessonContext } from "@/contexts/LessonContext";
 import { supabase } from "@/integrations/supabase/client";
+import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
 
@@ -46,97 +46,17 @@ const Index = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string>("");
   const [userPrompt, setUserPrompt] = useState<string>(
     "請協助我：1) 摘要重點 2) 列出生詞與語法點 3) 提出 3 個可操作的課堂活動。"
   );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { startParsing, parsingStep, parsingSteps, setCustomLessonData } = useLessonContext();
-
-  type AiLessonJson = {
-    main_level?: string;
-    dialogue?: {
-      title?: string;
-      lines?: Array<{ speaker: string; text: string }>;
-      vocabulary?: Array<Record<string, unknown>>;
-      grammar?: Array<Record<string, unknown>>;
-    };
-    essay?: {
-      title?: string;
-      paragraphs?: string[];
-      vocabulary?: Array<Record<string, unknown>>;
-      grammar?: Array<Record<string, unknown>>;
-    };
-    activities?: Array<{ title: string; description: string }>;
-  };
-
-  const toString = (v: unknown) => (typeof v === "string" ? v : "");
-  const toNumber = (v: unknown) => {
-    const n = typeof v === "number" ? v : Number(v);
-    return Number.isFinite(n) ? n : 0;
-  };
-
-  const normalizeLessonJson = (raw: AiLessonJson) => {
-    const dialogueLines = (raw.dialogue?.lines ?? [])
-      .filter((l) => l && typeof l.speaker === "string" && typeof l.text === "string")
-      .map((l) => ({ speaker: l.speaker, text: l.text }));
-
-    const speakers = Array.from(new Set(dialogueLines.map((l) => l.speaker)));
-
-    const mapVocab = (arr: Array<Record<string, unknown>> | undefined) =>
-      (arr ?? []).map((v) => ({
-        word: toString(v.word),
-        pinyin: toString(v.pinyin),
-        level: Math.max(0, Math.min(7, toNumber(v.level))),
-        english: toString(v.english),
-        partOfSpeech: toString(v.partOfSpeech),
-        example: toString(v.example),
-        japanese: toString(v.japanese),
-        korean: toString(v.korean),
-        vietnamese: toString(v.vietnamese),
-      }))
-      .filter((v) => v.word.trim().length > 0);
-
-    const mapGrammar = (arr: Array<Record<string, unknown>> | undefined) =>
-      (arr ?? []).map((g) => ({
-        pattern: toString(g.pattern),
-        level: Math.max(1, Math.min(7, toNumber(g.level) || 1)),
-        english: toString(g.english),
-        example: toString(g.example),
-      }))
-      .filter((g) => g.pattern.trim().length > 0);
-
-    const lessonData = {
-      main_level: raw.main_level,
-      dialogue: {
-        content: {
-          title: raw.dialogue?.title || "自訂課程（對話）",
-          warmUp: [],
-          characters: speakers.map((name) => ({ name, role: "" })),
-          setting: "",
-          lines: dialogueLines,
-        },
-        vocabulary: mapVocab(raw.dialogue?.vocabulary),
-        grammar: mapGrammar(raw.dialogue?.grammar),
-        references: [],
-      },
-      essay: {
-        content: {
-          title: raw.essay?.title || "自訂課程（短文）",
-          warmUp: [],
-          paragraphs: (raw.essay?.paragraphs ?? []).filter((p) => typeof p === "string" && p.trim().length > 0),
-        },
-        vocabulary: mapVocab(raw.essay?.vocabulary),
-        grammar: mapGrammar(raw.essay?.grammar),
-        references: [],
-      },
-      activities: (raw.activities ?? []).filter((a) => a?.title && a?.description),
-    };
-
-    return lessonData;
-  };
+  const { startParsing, parsingStep, parsingSteps } = useLessonContext();
 
   const isPdf = (file: File | null) => {
     if (!file) return false;
@@ -158,36 +78,69 @@ const Index = () => {
     return pageTexts.join("\n\n");
   };
 
-  const readFileAsText = async (file: File) => {
-    if (isPdf(file)) return await extractPdfText(file);
-    // TXT/MD/CSV: browser-decoded UTF-8 text
-    return await file.text();
+  const uploadToStorage = async (file: File) => {
+    // PDFs are parsed on the frontend; no need to upload to storage.
+    if (isPdf(file)) {
+      setFileUrl(null);
+      return;
+    }
+
+    setIsUploading(true);
+    setErrorMessage("");
+    setAnalysisResult("");
+    setFileUrl(null);
+
+    try {
+      const path = `${crypto.randomUUID()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("user-uploads")
+        .upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("user-uploads").getPublicUrl(path);
+      if (!data?.publicUrl) {
+        throw new Error("Failed to create public URL");
+      }
+      setFileUrl(data.publicUrl);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setErrorMessage(msg || "Upload failed");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const runAnalysis = async () => {
     if (!selectedFile) return;
     setIsAnalyzing(true);
     setErrorMessage("");
+    setAnalysisResult("");
 
     try {
-      const text = await readFileAsText(selectedFile);
-      const body: Record<string, unknown> = { text, user_prompt: userPrompt };
+      const body: Record<string, unknown> = {
+        user_prompt: userPrompt,
+        file_type: selectedFile.type,
+      };
+
+      if (isPdf(selectedFile)) {
+        const text = await extractPdfText(selectedFile);
+        body.content_text = text;
+      } else {
+        if (!fileUrl) throw new Error("File URL missing. Please re-upload the file.");
+        body.file_url = fileUrl;
+      }
 
       const { data, error } = await supabase.functions.invoke("analyze-file", { body });
 
       if (error) throw error;
-      const lessonJson = data as AiLessonJson;
-      const parsedLesson = normalizeLessonJson(lessonJson);
-      setCustomLessonData(parsedLesson);
-      navigate("/dashboard");
+      setAnalysisResult(data?.result ?? "");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErrorMessage(msg || "Analysis failed");
-      toast({
-        variant: "destructive",
-        title: "分析失敗",
-        description: msg || "Analysis failed",
-      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -208,6 +161,7 @@ const Index = () => {
     const file = e.dataTransfer.files?.[0];
     if (file) {
       setSelectedFile(file);
+      void uploadToStorage(file);
     }
   };
 
@@ -215,10 +169,15 @@ const Index = () => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      void uploadToStorage(file);
     }
   };
 
-  const canAnalyze = !!selectedFile && !isAnalyzing;
+  const canAnalyze =
+    !!selectedFile &&
+    !isUploading &&
+    !isAnalyzing &&
+    (isPdf(selectedFile) ? true : !!fileUrl);
 
   const handleFileParsing = async (demoMode: boolean) => {
     setIsParsing(true);
@@ -243,7 +202,7 @@ const Index = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".txt,.md,.csv,.pdf"
+        accept=".txt,.md,.csv,.pdf,.docx"
         className="hidden"
         onChange={handleFileChange}
       />
@@ -542,17 +501,21 @@ const Index = () => {
                   <div className="min-w-0">
                     <p className="text-sm text-muted-foreground">已選擇檔案</p>
                     <p className="font-medium text-foreground truncate">{selectedFile.name}</p>
+                    {fileUrl && (
+                      <p className="text-xs text-muted-foreground truncate mt-1">{fileUrl}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        void runAnalysis();
-                      }}
+                      onClick={runAnalysis}
                       disabled={!canAnalyze}
                       className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isAnalyzing ? "分析中..." : "開始分析"}
+                      {isUploading
+                        ? "上傳中..."
+                        : isAnalyzing
+                          ? "分析中..."
+                          : "開始分析"}
                     </button>
                   </div>
                 </div>
@@ -575,7 +538,14 @@ const Index = () => {
               </div>
             )}
 
-            {/* Note: analysis result is now structured JSON and immediately hydrates the Dashboard view. */}
+            {analysisResult && (
+              <div className="rounded-xl border border-border bg-card p-5">
+                <p className="text-sm font-medium text-foreground mb-3">AI 分析結果</p>
+                <div className="text-sm text-foreground leading-relaxed">
+                  <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Quick Start - Demo Mode */}

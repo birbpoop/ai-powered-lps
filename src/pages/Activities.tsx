@@ -29,8 +29,6 @@ const Activities = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isParsed, isDemoMode, lessonData } = useLessonContext();
-
-  const aiActivities = lessonData?.activities ?? [];
   
   const [debateNotes, setDebateNotes] = useState<DebateNotes>({
     proArguments: "",
@@ -191,7 +189,7 @@ const Activities = () => {
             transition={{ delay: 0.1 }}
           >
             <Tabs defaultValue="debate" className="w-full">
-              <TabsList className="w-full grid grid-cols-4 mb-8 h-14">
+              <TabsList className="w-full grid grid-cols-3 mb-8 h-14">
                 <TabsTrigger value="debate" className="flex items-center gap-2 text-sm sm:text-base">
                   <Scale className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden sm:inline">模擬辯論賽</span>
@@ -206,11 +204,6 @@ const Activities = () => {
                   <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden sm:inline">生詞發音練習</span>
                   <span className="sm:hidden">發音</span>
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="flex items-center gap-2 text-sm sm:text-base">
-                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">AI 活動</span>
-                  <span className="sm:hidden">AI</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -460,35 +453,6 @@ const Activities = () => {
                       </div>
                     )}
                   </div>
-                </div>
-              </TabsContent>
-
-              {/* AI Activities (from analysis JSON) */}
-              <TabsContent value="ai">
-                <div className="space-y-6">
-                  <div className="p-6 rounded-2xl bg-muted/50 border border-border">
-                    <h3 className="font-serif text-lg font-semibold text-foreground mb-2">AI 生成課堂活動</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      這些活動會依據您上傳的教材內容自動生成，可直接拿來做課堂引導與練習。
-                    </p>
-                  </div>
-
-                  {aiActivities.length > 0 ? (
-                    <div className="grid md:grid-cols-3 gap-4">
-                      {aiActivities.slice(0, 3).map((a, idx) => (
-                        <div key={`${a.title}-${idx}`} className="p-6 rounded-2xl bg-card border border-border shadow-card">
-                          <p className="text-sm text-muted-foreground mb-2">活動 {idx + 1}</p>
-                          <h4 className="font-serif text-lg font-semibold text-foreground mb-3">{a.title}</h4>
-                          <p className="text-muted-foreground leading-relaxed">{a.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-muted-foreground">
-                      <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>目前尚無 AI 活動資料</p>
-                    </div>
-                  )}
                 </div>
               </TabsContent>
             </Tabs>

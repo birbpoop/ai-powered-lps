@@ -251,13 +251,6 @@ const Dashboard = () => {
                 <p className="text-muted-foreground">
                   {lessonData.dialogue.content.title}
                 </p>
-                {lessonData.main_level && (
-                  <div className="mt-4 flex justify-center">
-                    <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
-                      {lessonData.main_level}
-                    </span>
-                  </div>
-                )}
               </>
             )}
           </motion.div>
