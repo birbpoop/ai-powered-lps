@@ -10,20 +10,17 @@ interface VocabularyFlashcardProps {
 const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const speak = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePlayAudio = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevents the card from flipping
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(vocabulary.word);
       utterance.lang = 'zh-TW';
       utterance.rate = 0.8;
-      speechSynthesis.speak(utterance);
+      window.speechSynthesis.speak(utterance);
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't flip if clicking on the speaker button
-    const target = e.target as HTMLElement;
-    if (target.closest('button')) return;
+  const handleCardClick = () => {
     setIsFlipped(!isFlipped);
   };
 
@@ -69,7 +66,7 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
 
           <div className="flex items-center gap-4">
             <button
-              onClick={speak}
+              onClick={handlePlayAudio}
               className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
               aria-label="發音"
             >
