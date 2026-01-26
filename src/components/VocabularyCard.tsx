@@ -13,6 +13,16 @@ interface VocabularyCardProps {
 const VocabularyCard = ({ word, level, english, partOfSpeech, example }: VocabularyCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  const handlePlayAudio = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevents the card from flipping
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'zh-TW';
+      utterance.rate = 0.8;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   return (
     <div 
       className="h-56 perspective-1000 cursor-pointer"
@@ -50,7 +60,11 @@ const VocabularyCard = ({ word, level, english, partOfSpeech, example }: Vocabul
             </span>
           )}
           
-          <button className="mt-4 p-2 rounded-full hover:bg-muted transition-colors">
+          <button 
+            onClick={handlePlayAudio}
+            className="mt-4 p-2 rounded-full hover:bg-muted transition-colors"
+            aria-label="播放發音"
+          >
             <Volume2 className="w-5 h-5 text-muted-foreground" />
           </button>
           
