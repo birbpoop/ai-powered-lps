@@ -8,9 +8,7 @@ const corsHeaders: Record<string, string> = {
 };
 
 type AnalyzeBody = {
-  // Preferred: send extracted plain text from the client (especially for PDFs)
   content_text?: string;
-  // Backward-compatible: for non-PDF text files you can still provide a URL
   file_url?: string;
   user_prompt?: string;
   file_type?: string;
@@ -36,7 +34,6 @@ async function extractTextFromUrl(fileUrl: string, fileType?: string) {
 
   const contentType = fileType || res.headers.get("content-type") || "";
 
-  // PDFs must be parsed on the frontend (pdfjs-dist) and sent as plain text.
   if (contentType.includes("application/pdf")) {
     return {
       ok: false as const,
@@ -45,7 +42,6 @@ async function extractTextFromUrl(fileUrl: string, fileType?: string) {
   }
 
   const buf = await res.arrayBuffer();
-  // Assume UTF-8 for now (text/csv/md)
   const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
   return { ok: true as const, text };
 }
@@ -67,7 +63,6 @@ Deno.serve(async (req) => {
 
     const { content_text, file_url, user_prompt, file_type } = (await req.json()) as AnalyzeBody;
 
-    // 1) Get plain text content
     let fileContent = "";
     if (content_text && content_text.trim()) {
       fileContent = content_text;
@@ -81,12 +76,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing content_text (preferred) or file_url" }, 400);
     }
 
-    // 2) Call Gemini
     const truncated = safeTruncate(fileContent, 25_000);
     const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+    // Use gemini-2.0-flash which is the currently available fast model
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const fullPrompt =
       "You are an expert educational AI assistant. Analyze the provided teaching material content and fulfill the user's specific instructions.\n\n" +
