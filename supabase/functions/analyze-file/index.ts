@@ -1,5 +1,6 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { Buffer } from "node:buffer"
+import pdf from "npm:pdf-parse@1.1.1"
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -35,10 +36,15 @@ async function extractTextFromUrl(fileUrl: string, fileType?: string) {
   const contentType = fileType || res.headers.get("content-type") || "";
 
   if (contentType.includes("application/pdf")) {
-    return {
-      ok: false as const,
-      error: "PDFs are not parsed on the backend. Please extract plain text on the client and send it as content_text.",
-    };
+    try {
+      const arrayBuffer = await res.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const pdfData = await pdf(buffer);
+      return { ok: true as const, text: pdfData.text };
+    } catch (pdfError) {
+      console.error("PDF Parse Error:", pdfError);
+      throw new Error("Failed to parse PDF.");
+    }
   }
 
   const buf = await res.arrayBuffer();
@@ -56,9 +62,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) {
-      return jsonResponse({ error: "Missing GEMINI_API_KEY" }, 500);
+      return jsonResponse({ error: "Missing OPENAI_API_KEY" }, 500);
     }
 
     const { content_text, file_url, user_prompt, file_type } = (await req.json()) as AnalyzeBody;
@@ -68,31 +74,99 @@ Deno.serve(async (req) => {
       fileContent = content_text;
     } else if (file_url) {
       const extracted = await extractTextFromUrl(file_url, file_type);
-      if (!extracted.ok) {
-        return jsonResponse({ error: extracted.error }, 400);
-      }
       fileContent = extracted.text;
     } else {
       return jsonResponse({ error: "Missing content_text (preferred) or file_url" }, 400);
     }
 
+    // Maintain the 20,000 character truncation safeguard
     const truncated = safeTruncate(fileContent, 20_000);
     const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-2.0-flash - valid model for v1beta API
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    // Define JSON Schema for OpenAI
+    const jsonSchema = `
+    {
+      "main_level": "string",
+      "dialogue": {
+        "title": "string",
+        "lines": [ { "speaker": "string", "text": "string" } ],
+        "vocabulary": [
+          {
+            "word": "string",
+            "pinyin": "string",
+            "level": number,
+            "english": "string",
+            "partOfSpeech": "string",
+            "example": "string",
+            "japanese": "string",
+            "korean": "string",
+            "vietnamese": "string"
+          }
+        ],
+        "grammar": [
+          { "pattern": "string", "level": number, "english": "string", "example": "string" }
+        ],
+        "references": []
+      },
+      "essay": {
+        "title": "string",
+        "paragraphs": ["string"],
+        "vocabulary": [],
+        "grammar": [],
+        "references": []
+      },
+      "activities": [
+        { "title": "string", "description": "string" }
+      ]
+    }
+    `;
 
-    const fullPrompt =
-      "You are an expert educational AI assistant. Analyze the provided teaching material content and fulfill the user's specific instructions.\n\n" +
-      `User Instruction:\n${instruction}\n\n---\nTarget File Content:\n${truncated}`;
+    // Call OpenAI API
+    console.log("Sending request to OpenAI...");
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        response_format: { type: "json_object" },
+        messages: [
+          { 
+            role: 'system', 
+            content: `You are an expert Mandarin teaching assistant (TBCL specialist).
+Analyze the provided text.
+Output strictly valid JSON matching this schema: ${jsonSchema}.
 
-    const resp = await model.generateContent(fullPrompt);
-    const resultText = resp.response.text();
+Requirements:
+1. Estimate TBCL Level (1-7).
+2. Extract vocabulary with TBCL levels.
+3. Generate example sentences.
+4. Create 3 classroom activities.` 
+          },
+          { 
+            role: 'user', 
+            content: `User Instruction: ${instruction}\n\nTarget Text:\n${truncated}` 
+          }
+        ],
+      }),
+    });
 
-    return jsonResponse({ result: resultText ?? "" });
+    const data = await openAIResponse.json();
+    
+    if (data.error) {
+      console.error("OpenAI Error:", data.error);
+      throw new Error(`OpenAI Error: ${data.error.message}`);
+    }
+
+    // Return Result
+    const result = JSON.parse(data.choices[0].message.content);
+
+    return jsonResponse(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error("Edge Function Error:", message);
     return jsonResponse({ error: message || "Unknown error" }, 500);
   }
 });
