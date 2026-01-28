@@ -1,6 +1,4 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { Buffer } from "node:buffer"
-import pdf from "npm:pdf-parse@1.1.1"
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -9,9 +7,7 @@ const corsHeaders: Record<string, string> = {
 };
 
 type AnalyzeBody = {
-  content_text?: string;
-  file_url?: string;
-  file_type?: string;
+  content_text: string;
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -24,31 +20,6 @@ function jsonResponse(body: unknown, status = 200) {
 function safeTruncate(input: string, maxChars: number) {
   if (input.length <= maxChars) return input;
   return input.slice(0, maxChars) + "\n\n[...truncated...]";
-}
-
-async function extractTextFromUrl(fileUrl: string, fileType?: string) {
-  const res = await fetch(fileUrl);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch file: ${res.status} ${res.statusText}`);
-  }
-
-  const contentType = fileType || res.headers.get("content-type") || "";
-
-  if (contentType.includes("application/pdf")) {
-    try {
-      const arrayBuffer = await res.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const pdfData = await pdf(buffer);
-      return { ok: true as const, text: pdfData.text };
-    } catch (pdfError) {
-      console.error("PDF Parse Error:", pdfError);
-      throw new Error("Failed to parse PDF.");
-    }
-  }
-
-  const buf = await res.arrayBuffer();
-  const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
-  return { ok: true as const, text };
 }
 
 Deno.serve(async (req) => {
@@ -66,18 +37,14 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing OPENAI_API_KEY" }, 500);
     }
 
-    // We strictly ignore 'user_prompt' - relying solely on the hardcoded professional persona
-    const { content_text, file_url, file_type } = (await req.json()) as AnalyzeBody;
+    // Frontend must send pre-extracted text content (PDF parsing happens client-side via pdfjs-dist)
+    const { content_text } = (await req.json()) as AnalyzeBody;
 
-    let fileContent = "";
-    if (content_text && content_text.trim()) {
-      fileContent = content_text;
-    } else if (file_url) {
-      const extracted = await extractTextFromUrl(file_url, file_type);
-      fileContent = extracted.text;
-    } else {
-      return jsonResponse({ error: "Missing content_text (preferred) or file_url" }, 400);
+    if (!content_text || content_text.trim().length === 0) {
+      return jsonResponse({ error: "Missing content_text - please extract text from your file before sending" }, 400);
     }
+
+    const fileContent = content_text;
 
     if (!fileContent || fileContent.trim().length === 0) {
       return jsonResponse({ error: "File content is empty." }, 400);
