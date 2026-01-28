@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
+import mammoth from "mammoth";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -42,24 +43,34 @@ const productFeatures = [
 
 const parsingIcons = [FileText, Brain, Sparkles, CheckCircle2];
 
-const Index = () => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isParsing, setIsParsing] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { startParsing, parsingStep, parsingSteps, setCustomLessonData } = useLessonContext();
+// File type detection helpers
+const isPdf = (file: File | null): boolean => {
+  if (!file) return false;
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+};
 
-  const isPdf = (file: File | null) => {
-    if (!file) return false;
-    return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-  };
+const isDocx = (file: File | null): boolean => {
+  if (!file) return false;
+  return (
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    file.name.toLowerCase().endsWith(".docx")
+  );
+};
 
-  const extractPdfText = async (file: File) => {
+const isTextFile = (file: File | null): boolean => {
+  if (!file) return false;
+  const textTypes = ["text/plain", "text/markdown", "text/csv"];
+  const textExtensions = [".txt", ".md", ".csv"];
+  return (
+    textTypes.includes(file.type) ||
+    textExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
+  );
+};
+
+// Unified text extraction function
+const extractTextFromFile = async (file: File): Promise<string> => {
+  if (isPdf(file)) {
+    // Extract text from PDF using pdfjs-dist
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
@@ -70,44 +81,33 @@ const Index = () => {
       const strings = (textContent.items as Array<{ str?: string }>).map((it) => it.str ?? "");
       pageTexts.push(strings.join(" "));
     }
-
     return pageTexts.join("\n\n");
-  };
+  }
 
-  const uploadToStorage = async (file: File) => {
-    // PDFs are parsed on the frontend; no need to upload to storage.
-    if (isPdf(file)) {
-      setFileUrl(null);
-      return;
-    }
+  if (isDocx(file)) {
+    // Extract text from DOCX using mammoth
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  }
 
-    setIsUploading(true);
-    setErrorMessage("");
-    setFileUrl(null);
+  if (isTextFile(file)) {
+    // Read plain text files directly
+    return await file.text();
+  }
 
-    try {
-      const path = `${crypto.randomUUID()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("user-uploads")
-        .upload(path, file, {
-          contentType: file.type || "application/octet-stream",
-          upsert: false,
-        });
+  throw new Error(`Unsupported file type: ${file.type || file.name}`);
+};
 
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from("user-uploads").getPublicUrl(path);
-      if (!data?.publicUrl) {
-        throw new Error("Failed to create public URL");
-      }
-      setFileUrl(data.publicUrl);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setErrorMessage(msg || "Upload failed");
-    } finally {
-      setIsUploading(false);
-    }
-  };
+const Index = () => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { startParsing, parsingStep, parsingSteps, setCustomLessonData } = useLessonContext();
 
   const runAnalysis = async () => {
     if (!selectedFile) return;
@@ -116,21 +116,18 @@ const Index = () => {
     setErrorMessage("");
 
     try {
-      const body: Record<string, unknown> = {
-        file_type: selectedFile.type,
-      };
-
-      if (isPdf(selectedFile)) {
-        const text = await extractPdfText(selectedFile);
-        body.content_text = text;
-      } else {
-        if (!fileUrl) throw new Error("File URL missing. Please re-upload the file.");
-        body.file_url = fileUrl;
+      // Extract text client-side for ALL file types
+      const extractedText = await extractTextFromFile(selectedFile);
+      
+      if (!extractedText || extractedText.trim().length === 0) {
+        throw new Error("Could not extract any text from the file. Please try a different file.");
       }
 
-      const { data, error } = await supabase.functions.invoke("analyze-file", { body });
+      // Send only content_text to the edge function
+      const { data, error } = await supabase.functions.invoke("analyze-file", { 
+        body: { content_text: extractedText } 
+      });
 
-      if (error) throw error;
 
       // Map API response to LessonData structure
       const result = data;
@@ -233,7 +230,6 @@ const Index = () => {
     const file = e.dataTransfer.files?.[0];
     if (file) {
       setSelectedFile(file);
-      void uploadToStorage(file);
     }
   };
 
@@ -241,15 +237,10 @@ const Index = () => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      void uploadToStorage(file);
     }
   };
 
-  const canAnalyze =
-    !!selectedFile &&
-    !isUploading &&
-    !isAnalyzing &&
-    (isPdf(selectedFile) ? true : !!fileUrl);
+  const canAnalyze = !!selectedFile && !isAnalyzing;
 
   const handleFileParsing = async (demoMode: boolean) => {
     setIsParsing(true);
@@ -529,9 +520,6 @@ const Index = () => {
                     {(selectedFile.size / 1024).toFixed(1)} KB · {selectedFile.type || "Unknown type"}
                   </p>
                 </div>
-                {isUploading && (
-                  <div className="text-sm text-muted-foreground">上傳中...</div>
-                )}
               </div>
 
               {/* Error Message */}
