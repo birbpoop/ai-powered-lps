@@ -11,7 +11,6 @@ const corsHeaders: Record<string, string> = {
 type AnalyzeBody = {
   content_text?: string;
   file_url?: string;
-  user_prompt?: string;
   file_type?: string;
 };
 
@@ -67,7 +66,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing OPENAI_API_KEY" }, 500);
     }
 
-    const { content_text, file_url, user_prompt, file_type } = (await req.json()) as AnalyzeBody;
+    // We strictly ignore 'user_prompt' - relying solely on the hardcoded professional persona
+    const { content_text, file_url, file_type } = (await req.json()) as AnalyzeBody;
 
     let fileContent = "";
     if (content_text && content_text.trim()) {
@@ -79,50 +79,78 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing content_text (preferred) or file_url" }, 400);
     }
 
+    if (!fileContent || fileContent.trim().length === 0) {
+      return jsonResponse({ error: "File content is empty." }, 400);
+    }
+
     // Maintain the 20,000 character truncation safeguard
     const truncated = safeTruncate(fileContent, 20_000);
-    const instruction = user_prompt?.trim() || "Please summarize and extract teaching points.";
 
-    // Define JSON Schema for OpenAI
+    // Define JSON Schema (Updated with Summary & Strict Constraints)
     const jsonSchema = `
-    {
-      "main_level": "string",
-      "dialogue": {
-        "title": "string",
-        "lines": [ { "speaker": "string", "text": "string" } ],
-        "vocabulary": [
-          {
-            "word": "string",
-            "pinyin": "string",
-            "level": number,
-            "english": "string",
-            "partOfSpeech": "string",
-            "example": "string",
-            "japanese": "string",
-            "korean": "string",
-            "vietnamese": "string"
-          }
-        ],
-        "grammar": [
-          { "pattern": "string", "level": number, "english": "string", "example": "string" }
-        ],
-        "references": []
-      },
-      "essay": {
-        "title": "string",
-        "paragraphs": ["string"],
-        "vocabulary": [],
-        "grammar": [],
-        "references": []
-      },
-      "activities": [
-        { "title": "string", "description": "string" }
-      ]
-    }
-    `;
+{
+  "main_level": "string (e.g., 'TBCL Level 4')",
+  "summary": "string (A concise summary of the text's key points in Chinese)",
+  "dialogue": {
+    "title": "string",
+    "lines": [ { "speaker": "string", "text": "string" } ],
+    "vocabulary": [
+      {
+        "word": "string",
+        "pinyin": "string",
+        "level": number (Must be 1, 2, 3, 4, 5, 6, 7 or 0 for unknown/X),
+        "english": "string",
+        "partOfSpeech": "string",
+        "example": "string",
+        "japanese": "string",
+        "korean": "string",
+        "vietnamese": "string"
+      }
+    ],
+    "grammar": [
+      { "pattern": "string", "level": number, "english": "string", "example": "string", "note": "語法點僅供參考" }
+    ],
+    "references": []
+  },
+  "essay": {
+    "title": "string",
+    "paragraphs": ["string"],
+    "vocabulary": [],
+    "grammar": [],
+    "references": []
+  },
+  "activities": [
+    { "title": "string", "description": "string (Operational classroom activity description)" }
+  ]
+}
+`;
 
-    // Call OpenAI API
-    console.log("Sending request to OpenAI...");
+    // Construct the Senior Teacher Persona Prompt
+    const systemInstruction = `
+You are a **Senior Mandarin Teacher** with decades of teaching experience. 
+You are an expert in the principles of Mandarin teaching materials and proficiency standards, specifically **TBCL (Taiwan Benchmarks for the Chinese Language)**, CEFR, and TOCFL.
+
+**Your Task:**
+Analyze the provided text file and strictly parse it into the following 5 blocks within a JSON object:
+
+1. **Article Content**: Extract the text content into either the 'dialogue' or 'essay' structure. For dialogue, extract speaker lines. For essays/passages, extract paragraphs.
+
+2. **Summary**: Provide a concise summary of the key points (摘要重點) in the 'summary' field. Write in Chinese.
+
+3. **Vocabulary**: List key vocabulary words. 
+   **Constraint:** You must refer to the National Academy for Educational Research (NAER) system and label each word with its correct **TBCL Level (1-7)**. Use numeric values: 1, 2, 3, 4, 5, 6, or 7. If a word is outside these levels or cannot be determined, mark it as **0** (representing 'X'/unknown). Do NOT hallucinate levels.
+   Include: word, pinyin, level (number), english, partOfSpeech, example sentence in Chinese, japanese, korean, vietnamese translations.
+
+4. **Grammar Points**: Extract relevant grammar patterns.
+   **Constraint:** Each grammar point must include the note "語法點僅供參考" (Grammar points are for reference only).
+
+5. **Classroom Activities**: Propose **exactly 2** operational classroom activities (可操作的課堂活動). Each activity should have a clear title and description that teachers can immediately implement.
+
+**Output Format:** Return strictly valid JSON matching the schema provided. No markdown, no code blocks, just pure JSON.
+`;
+
+    // Call OpenAI API with Fixed Teacher Persona
+    console.log("Sending request to OpenAI with Fixed Teacher Persona...");
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -135,19 +163,11 @@ Deno.serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: `You are an expert Mandarin teaching assistant (TBCL specialist).
-Analyze the provided text.
-Output strictly valid JSON matching this schema: ${jsonSchema}.
-
-Requirements:
-1. Estimate TBCL Level (1-7).
-2. Extract vocabulary with TBCL levels.
-3. Generate example sentences.
-4. Create 3 classroom activities.` 
+            content: `${systemInstruction}\n\nSchema:\n${jsonSchema}` 
           },
           { 
             role: 'user', 
-            content: `User Instruction: ${instruction}\n\nTarget Text:\n${truncated}` 
+            content: `Target Text to Analyze:\n${truncated}` 
           }
         ],
       }),

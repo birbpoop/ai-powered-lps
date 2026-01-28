@@ -19,8 +19,8 @@ import {
 import Navigation from "@/components/Navigation";
 import { useLessonContext } from "@/contexts/LessonContext";
 import { supabase } from "@/integrations/supabase/client";
-import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
 
@@ -49,14 +49,10 @@ const Index = () => {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<string>("");
-  const [userPrompt, setUserPrompt] = useState<string>(
-    "請協助我：1) 摘要重點 2) 列出生詞與語法點 3) 提出 3 個可操作的課堂活動。"
-  );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { startParsing, parsingStep, parsingSteps } = useLessonContext();
+  const { startParsing, parsingStep, parsingSteps, setCustomLessonData } = useLessonContext();
 
   const isPdf = (file: File | null) => {
     if (!file) return false;
@@ -87,7 +83,6 @@ const Index = () => {
 
     setIsUploading(true);
     setErrorMessage("");
-    setAnalysisResult("");
     setFileUrl(null);
 
     try {
@@ -117,12 +112,11 @@ const Index = () => {
   const runAnalysis = async () => {
     if (!selectedFile) return;
     setIsAnalyzing(true);
+    setIsParsing(true);
     setErrorMessage("");
-    setAnalysisResult("");
 
     try {
       const body: Record<string, unknown> = {
-        user_prompt: userPrompt,
         file_type: selectedFile.type,
       };
 
@@ -137,12 +131,90 @@ const Index = () => {
       const { data, error } = await supabase.functions.invoke("analyze-file", { body });
 
       if (error) throw error;
-      setAnalysisResult(data?.result ?? "");
+
+      // Map API response to LessonData structure
+      const result = data;
+      
+      const newLessonData = {
+        dialogue: {
+          content: {
+            title: result.dialogue?.title || result.essay?.title || "自訂課程",
+            warmUp: [] as string[],
+            characters: [] as { name: string; role: string }[],
+            setting: "",
+            lines: result.dialogue?.lines || [],
+          },
+          vocabulary: (result.dialogue?.vocabulary || []).map((v: any) => ({
+            word: v.word || "",
+            pinyin: v.pinyin || "",
+            level: typeof v.level === 'number' ? v.level : parseInt(v.level) || 0,
+            english: v.english || "",
+            partOfSpeech: v.partOfSpeech || "",
+            example: v.example || "",
+            japanese: v.japanese || "",
+            korean: v.korean || "",
+            vietnamese: v.vietnamese || "",
+          })),
+          grammar: (result.dialogue?.grammar || []).map((g: any) => ({
+            pattern: g.pattern || "",
+            level: typeof g.level === 'number' ? g.level : parseInt(g.level) || 0,
+            english: g.english || "",
+            example: g.example || "",
+          })),
+          references: result.dialogue?.references || [],
+        },
+        essay: {
+          content: {
+            title: result.essay?.title || "",
+            warmUp: [] as string[],
+            paragraphs: result.essay?.paragraphs || [],
+          },
+          vocabulary: (result.essay?.vocabulary || []).map((v: any) => ({
+            word: v.word || "",
+            pinyin: v.pinyin || "",
+            level: typeof v.level === 'number' ? v.level : parseInt(v.level) || 0,
+            english: v.english || "",
+            partOfSpeech: v.partOfSpeech || "",
+            example: v.example || "",
+            japanese: v.japanese || "",
+            korean: v.korean || "",
+            vietnamese: v.vietnamese || "",
+          })),
+          grammar: (result.essay?.grammar || []).map((g: any) => ({
+            pattern: g.pattern || "",
+            level: typeof g.level === 'number' ? g.level : parseInt(g.level) || 0,
+            english: g.english || "",
+            example: g.example || "",
+          })),
+          references: result.essay?.references || [],
+        },
+        summary: result.summary || "",
+        mainLevel: result.main_level || "",
+        activities: result.activities || [],
+      };
+
+      // Update context with custom lesson data
+      setCustomLessonData(newLessonData);
+      
+      toast({
+        title: "分析完成！",
+        description: "正在跳轉至教學模組...",
+      });
+      
+      // Navigate to dashboard
+      navigate("/dashboard");
+
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErrorMessage(msg || "Analysis failed");
+      toast({
+        title: "分析失敗",
+        description: msg,
+        variant: "destructive",
+      });
     } finally {
       setIsAnalyzing(false);
+      setIsParsing(false);
     }
   };
 
@@ -226,61 +298,25 @@ const Index = () => {
                 transition={{ duration: 0.3 }}
               >
                 <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center">
-                  {(() => {
-                    const IconComponent = parsingIcons[parsingStep] || FileText;
-                    return <IconComponent className="w-12 h-12 text-gold" />;
-                  })()}
+                  {isAnalyzing ? (
+                    <Brain className="w-12 h-12 text-gold animate-pulse" />
+                  ) : (
+                    (() => {
+                      const IconComponent = parsingIcons[parsingStep] || FileText;
+                      return <IconComponent className="w-12 h-12 text-gold" />;
+                    })()
+                  )}
                 </div>
               </motion.div>
 
-              {/* Progress Steps */}
-              <div className="space-y-4">
-                {parsingSteps.map((step, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ 
-                      opacity: index <= parsingStep ? 1 : 0.3,
-                      x: 0 
-                    }}
-                    transition={{ delay: index * 0.1, duration: 0.3 }}
-                    className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
-                      index === parsingStep 
-                        ? 'bg-gold/20 border border-gold/40' 
-                        : index < parsingStep 
-                          ? 'bg-secondary/10' 
-                          : 'bg-muted/10'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      index < parsingStep 
-                        ? 'bg-secondary text-secondary-foreground' 
-                        : index === parsingStep 
-                          ? 'bg-gold text-navy' 
-                          : 'bg-muted/30 text-muted-foreground'
-                    }`}>
-                      {index < parsingStep ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <span className="text-sm font-bold">{index + 1}</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${
-                        index <= parsingStep ? 'text-primary-foreground' : 'text-muted-foreground'
-                      }`}>
-                        {step}
-                      </p>
-                    </div>
-                    {index === parsingStep && (
-                      <motion.div
-                        className="w-2 h-2 rounded-full bg-gold"
-                        animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                        transition={{ repeat: Infinity, duration: 1 }}
-                      />
-                    )}
-                  </motion.div>
-                ))}
+              {/* Status Text */}
+              <div className="text-center">
+                <p className="text-primary-foreground text-lg font-medium">
+                  {isAnalyzing ? "AI 正在分析您的檔案..." : parsingSteps[parsingStep]}
+                </p>
+                <p className="text-primary-foreground/60 text-sm mt-2">
+                  {isAnalyzing ? "Analyzing with GPT-4o..." : "Processing..."}
+                </p>
               </div>
 
               {/* Progress Bar */}
@@ -289,13 +325,10 @@ const Index = () => {
                   <motion.div
                     className="h-full bg-gradient-to-r from-gold to-secondary rounded-full"
                     initial={{ width: "0%" }}
-                    animate={{ width: `${((parsingStep + 1) / parsingSteps.length) * 100}%` }}
+                    animate={{ width: isAnalyzing ? "90%" : `${((parsingStep + 1) / parsingSteps.length) * 100}%` }}
                     transition={{ duration: 0.5 }}
                   />
                 </div>
-                <p className="text-center text-primary-foreground/60 text-sm mt-3">
-                  {Math.round(((parsingStep + 1) / parsingSteps.length) * 100)}% 完成
-                </p>
               </div>
             </div>
           </motion.div>
@@ -462,93 +495,79 @@ const Index = () => {
             onDrop={handleDrop}
             onClick={handleUploadClick}
           >
-            <div className="flex flex-col items-center text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                isDragging ? "bg-gold" : "bg-muted"
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${
+                isDragging ? "bg-gold/20" : "bg-muted"
               }`}>
-                {isDragging ? (
-                  <FileUp className="w-8 h-8 text-navy" />
-                ) : (
-                  <Upload className="w-8 h-8 text-muted-foreground" />
-                )}
+                <FileUp className={`w-8 h-8 transition-colors ${
+                  isDragging ? "text-gold" : "text-muted-foreground"
+                }`} />
               </div>
-              <p className="text-lg font-medium text-foreground mb-2">
-                {isDragging ? "放開以上傳檔案" : "檔案上傳"}
-              </p>
-              <p className="text-sm text-muted-foreground mb-4">
-                支援格式：.txt, .md, .csv, .pdf
-              </p>
-              <button
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gold text-navy font-medium hover:bg-gold-dark transition-all"
-              >
-                選擇檔案
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div>
+                <p className="font-medium text-foreground">
+                  {selectedFile ? selectedFile.name : "拖曳檔案至此或點擊上傳"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  支援 TXT、MD、CSV、PDF、DOCX 格式
+                </p>
+              </div>
             </div>
           </motion.div>
 
-          {/* Upload + Analyze */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 }}
-            className="mt-6 space-y-4"
-          >
-            {selectedFile && (
-              <div className="rounded-xl border border-border bg-card p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm text-muted-foreground">已選擇檔案</p>
-                    <p className="font-medium text-foreground truncate">{selectedFile.name}</p>
-                    {fileUrl && (
-                      <p className="text-xs text-muted-foreground truncate mt-1">{fileUrl}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={runAnalysis}
-                      disabled={!canAnalyze}
-                      className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isUploading
-                        ? "上傳中..."
-                        : isAnalyzing
-                          ? "分析中..."
-                          : "開始分析"}
-                    </button>
-                  </div>
+          {/* File Selected State */}
+          {selectedFile && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 space-y-4"
+            >
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+                <FileText className="w-8 h-8 text-gold" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{selectedFile.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {(selectedFile.size / 1024).toFixed(1)} KB · {selectedFile.type || "Unknown type"}
+                  </p>
                 </div>
+                {isUploading && (
+                  <div className="text-sm text-muted-foreground">上傳中...</div>
+                )}
+              </div>
 
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm font-medium text-foreground">分析指令（Prompt）</p>
-                  <Textarea
-                    value={userPrompt}
-                    onChange={(e) => setUserPrompt(e.target.value)}
-                    className="min-h-[100px]"
-                    placeholder="請輸入你希望 AI 對檔案做什麼分析..."
-                  />
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                  {errorMessage}
                 </div>
-              </div>
-            )}
+              )}
 
-            {errorMessage && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-                {errorMessage}
-              </div>
-            )}
+              {/* Analyze Button */}
+              <button
+                onClick={runAnalysis}
+                disabled={!canAnalyze}
+                className={`w-full py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-3 ${
+                  canAnalyze
+                    ? "bg-gold hover:bg-gold-dark text-navy shadow-lg hover:shadow-gold/30"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Brain className="w-5 h-5 animate-pulse" />
+                    AI 分析中...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    開始 AI 分析
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </motion.div>
+          )}
 
-            {analysisResult && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <p className="text-sm font-medium text-foreground mb-3">AI 分析結果</p>
-                <div className="text-sm text-foreground leading-relaxed">
-                  <ReactMarkdown>{analysisResult}</ReactMarkdown>
-                </div>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Quick Start - Demo Mode */}
+          {/* Demo Button Alternative */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -557,105 +576,18 @@ const Index = () => {
             className="mt-8 text-center"
           >
             <p className="text-sm text-muted-foreground mb-3">
-              或使用預設課程內容快速體驗
+              或者先體驗示範課程
             </p>
             <button
               onClick={handleDemoClick}
-              className="inline-flex items-center gap-2 text-gold hover:text-gold-dark font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-gold/40 text-gold hover:bg-gold/10 transition-colors"
             >
               <BookOpen className="w-4 h-4" />
               瀏覽示範課程
-              <ArrowRight className="w-4 h-4" />
             </button>
           </motion.div>
         </div>
       </section>
-
-      {/* About Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 text-secondary text-sm font-medium mb-6">
-                <Zap className="w-4 h-4" />
-                智慧教學輔助
-              </div>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-6">
-                一鍵生成教學模組
-              </h2>
-              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                上傳您的課程資料，系統將自動解析文本內容，運用 NLP 技術提取關鍵詞彙與語法結構，
-                並生成完整的教學模組，大幅提升華語教師的備課效率。
-              </p>
-              <ul className="space-y-3">
-                {[
-                  "自動提取課文中的核心詞彙",
-                  "智慧分析語法結構與句型",
-                  "生成互動式教學活動",
-                  "多語翻譯即時查閱",
-                ].map((item, index) => (
-                  <li key={index} className="flex items-center gap-3 text-foreground">
-                    <div className="w-2 h-2 rounded-full bg-gold" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="relative"
-            >
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-elevated relative">
-                {/* Split visual - Product illustration */}
-                <div className="absolute inset-0 flex">
-                  <div className="w-1/2 bg-gradient-to-br from-navy to-navy-light flex items-center justify-center">
-                    <Cpu className="w-20 h-20 text-primary-foreground/30" />
-                  </div>
-                  <div className="w-1/2 bg-gradient-to-bl from-sage to-sage-dark flex items-center justify-center">
-                    <Leaf className="w-20 h-20 text-secondary-foreground/30" />
-                  </div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-navy/80 via-transparent to-transparent">
-                  <div className="text-center text-primary-foreground">
-                    <p className="text-3xl font-serif font-bold">智慧備課</p>
-                    <p className="text-sm opacity-70">AI-Powered Preparation</p>
-                    <div className="mt-2 inline-block px-3 py-1 bg-gold/20 rounded-full">
-                      <span className="text-xs text-gold">效率 × 品質</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-primary text-primary-foreground">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg overflow-hidden bg-background">
-                <img src="/favicon.png" alt="智慧華語備課系統" className="w-full h-full object-contain" />
-              </div>
-              <span className="font-serif text-xl font-semibold">智慧華語備課系統</span>
-          </div>
-          <p className="text-primary-foreground/60 text-sm">
-              AI-Powered Lesson Preparation System
-          </p>
-          <p className="text-primary-foreground/40 text-xs mt-4">
-            © 2026 聯合大學華語文學系學生團隊
-          </p>
-        </div>
-      </footer>
     </div>
   );
 };

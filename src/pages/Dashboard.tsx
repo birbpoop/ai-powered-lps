@@ -7,7 +7,8 @@ import {
   ExternalLink,
   MessageCircle,
   Upload,
-  AlertCircle
+  AlertCircle,
+  Lightbulb
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -110,6 +111,9 @@ const Dashboard = () => {
     ...lessonData.dialogue.grammar.slice(0, 2),
     ...lessonData.essay.grammar.slice(0, 2),
   ];
+
+  // Get activities from lessonData
+  const activities = lessonData.activities || [];
 
   // Create keyword map for highlighting
   const keywordMap: Record<string, VocabularyItem> = {};
@@ -243,7 +247,7 @@ const Dashboard = () => {
             {!isDemoMode && (
               <>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-sm font-medium mb-4">
-                  自訂課程
+                  {lessonData.mainLevel || "自訂課程"}
                 </div>
                 <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
                   教學模組總覽
@@ -251,6 +255,18 @@ const Dashboard = () => {
                 <p className="text-muted-foreground">
                   {lessonData.dialogue.content.title}
                 </p>
+                {/* Summary Section for Custom Lessons */}
+                {lessonData.summary && (
+                  <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border text-left max-w-2xl mx-auto">
+                    <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-gold" />
+                      摘要重點 Summary
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {lessonData.summary}
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </motion.div>
@@ -330,31 +346,35 @@ const Dashboard = () => {
                             </p>
                           </div>
                         ))}
-                        <div className="text-center py-4">
-                          <Link 
-                            to="/dialogue" 
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/10 text-gold hover:bg-gold/20 transition-colors text-sm font-medium"
-                          >
-                            查看完整對話
-                            <ExternalLink className="w-4 h-4" />
-                          </Link>
-                        </div>
+                        {lessonData.dialogue.content.lines.length > 8 && (
+                          <div className="text-center py-4">
+                            <Link 
+                              to="/dialogue" 
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/10 text-gold hover:bg-gold/20 transition-colors text-sm font-medium"
+                            >
+                              查看完整對話
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
+                          </div>
+                        )}
                       </div>
                       
                       {/* APA References - Conversation */}
-                      <div className="p-4 rounded-lg bg-background border-l-4 border-gold">
-                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
-                        {lessonData.dialogue.references.map((ref) => (
-                          <APAReference 
-                            key={ref.id}
-                            author={ref.author}
-                            year={ref.year}
-                            title={ref.title}
-                            source={ref.source}
-                            url={ref.url}
-                          />
-                        ))}
-                      </div>
+                      {lessonData.dialogue.references.length > 0 && (
+                        <div className="p-4 rounded-lg bg-background border-l-4 border-gold">
+                          <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
+                          {lessonData.dialogue.references.map((ref) => (
+                            <APAReference 
+                              key={ref.id}
+                              author={ref.author}
+                              year={ref.year}
+                              title={ref.title}
+                              source={ref.source}
+                              url={ref.url}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                   
@@ -374,31 +394,35 @@ const Dashboard = () => {
                             {highlightKeywords(para)}
                           </p>
                         ))}
-                        <div className="text-center py-4">
-                          <Link 
-                            to="/essay" 
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors text-sm font-medium"
-                          >
-                            查看完整短文
-                            <ExternalLink className="w-4 h-4" />
-                          </Link>
-                        </div>
+                        {lessonData.essay.content.paragraphs.length > 2 && (
+                          <div className="text-center py-4">
+                            <Link 
+                              to="/essay" 
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors text-sm font-medium"
+                            >
+                              查看完整短文
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
+                          </div>
+                        )}
                       </div>
                       
                       {/* APA References - Passage */}
-                      <div className="p-4 rounded-lg bg-background border-l-4 border-secondary">
-                        <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
-                        {lessonData.essay.references.map((ref) => (
-                          <APAReference 
-                            key={ref.id}
-                            author={ref.author}
-                            year={ref.year}
-                            title={ref.title}
-                            source={ref.source}
-                            url={ref.url}
-                          />
-                        ))}
-                      </div>
+                      {lessonData.essay.references.length > 0 && (
+                        <div className="p-4 rounded-lg bg-background border-l-4 border-secondary">
+                          <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">參考資料 (References)</p>
+                          {lessonData.essay.references.map((ref) => (
+                            <APAReference 
+                              key={ref.id}
+                              author={ref.author}
+                              year={ref.year}
+                              title={ref.title}
+                              source={ref.source}
+                              url={ref.url}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -453,6 +477,9 @@ const Dashboard = () => {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
+                <p className="text-xs text-muted-foreground mb-4 italic">
+                  ⚠️ 語法點僅供參考 (Grammar points are for reference only)
+                </p>
                 <div className="space-y-3">
                   {allGrammar.map((grammar, index) => (
                     <div 
@@ -491,16 +518,37 @@ const Dashboard = () => {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 space-y-6">
-                {/* Activity Description */}
-                <div className="p-4 rounded-lg bg-gold/10 border border-gold/20">
-                  <h3 className="font-medium text-foreground mb-2">生詞發音練習與檢測</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Vocabulary Pronunciation Practice
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    練習以下 10 個核心生詞的發音，錄音後提交給教師評分
-                  </p>
-                </div>
+                {/* Dynamic Activities from API */}
+                {activities.length > 0 ? (
+                  <div className="space-y-4">
+                    {activities.map((activity, index) => (
+                      <div key={index} className="p-4 rounded-lg bg-gold/10 border border-gold/20">
+                        <div className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gold text-navy flex items-center justify-center font-bold text-sm">
+                            {index + 1}
+                          </span>
+                          <div>
+                            <h3 className="font-medium text-foreground mb-1">{activity.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {activity.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Default Activity for Demo Mode */
+                  <div className="p-4 rounded-lg bg-gold/10 border border-gold/20">
+                    <h3 className="font-medium text-foreground mb-2">生詞發音練習與檢測</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Vocabulary Pronunciation Practice
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      練習以下 10 個核心生詞的發音，錄音後提交給教師評分
+                    </p>
+                  </div>
+                )}
 
                 {/* All 10 Vocabulary Recording Submissions */}
                 <div>

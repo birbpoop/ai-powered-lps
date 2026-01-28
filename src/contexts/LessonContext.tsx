@@ -13,6 +13,11 @@ import {
   Reference
 } from "@/data/content";
 
+export interface ClassroomActivity {
+  title: string;
+  description: string;
+}
+
 interface LessonData {
   dialogue: {
     content: typeof dialogueContent;
@@ -26,6 +31,9 @@ interface LessonData {
     grammar: GrammarPoint[];
     references: Reference[];
   };
+  summary?: string;
+  activities?: ClassroomActivity[];
+  mainLevel?: string;
 }
 
 // Empty template for upload mode
@@ -52,6 +60,7 @@ interface LessonContextType {
   parsingSteps: string[];
   startParsing: (demoMode?: boolean) => Promise<void>;
   resetParsing: () => void;
+  setCustomLessonData: (data: LessonData) => void;
 }
 
 const parsingStepsData = [
@@ -124,6 +133,14 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
     setParsingStep(0);
   };
 
+  // New function to set custom lesson data from API response
+  const setCustomLessonData = (data: LessonData) => {
+    setLessonData(data);
+    setIsDemoMode(false);
+    setIsParsed(true);
+    setIsParsingComplete(true);
+  };
+
   return (
     <LessonContext.Provider
       value={{
@@ -135,6 +152,7 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
         parsingSteps: parsingStepsData,
         startParsing,
         resetParsing,
+        setCustomLessonData,
       }}
     >
       {children}
