@@ -29,7 +29,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 // Demo content stats - only shown after entering demo mode
 const demoStats = [
-  { value: "TBC", label: "Level 5", icon: Zap },
+  { value: "TBCL", label: "Level 5", icon: Zap },
   { value: "40+", label: "核心生詞", icon: Library },
   { value: "13", label: "語法點", icon: BookOpen },
 ];
