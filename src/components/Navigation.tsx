@@ -28,7 +28,7 @@ const Navigation = () => {
   const isHome = location.pathname === "/";
 
   return (
-    <nav 
+    <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled || !isHome
           ? "bg-primary/95 backdrop-blur-md border-b border-primary-foreground/10 shadow-lg"
@@ -39,26 +39,24 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className={`w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center transition-all ${
-              isScrolled || !isHome ? "bg-background" : "bg-background/20 backdrop-blur-sm"
-            }`}>
+            <div
+              className={`w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center transition-all ${
+                isScrolled || !isHome ? "bg-background" : "bg-background/20 backdrop-blur-sm"
+              }`}
+            >
               <img src="/favicon.png" alt="智慧華語備課系統" className="w-full h-full object-contain" />
             </div>
             <div className="hidden sm:block">
-              <span className="text-primary-foreground font-serif font-semibold text-lg">
-                智慧華語備課系統
-              </span>
-              <span className="block text-primary-foreground/60 text-xs">
-                TBCL Level 5
-              </span>
+              <span className="text-primary-foreground font-serif font-semibold text-lg">智慧華語備課系統</span>
+              <span className="block text-primary-foreground/60 text-xs">適用於TBCL各等級(以上傳文件為主)</span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path || 
-                (item.path.includes("#") && location.pathname === "/dashboard");
+              const isActive =
+                location.pathname === item.path || (item.path.includes("#") && location.pathname === "/dashboard");
               return (
                 <Link
                   key={item.path}
@@ -111,9 +109,7 @@ const Navigation = () => {
                     to={item.path}
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                      isActive
-                        ? "bg-gold text-navy"
-                        : "text-primary-foreground/80 hover:bg-primary-foreground/10"
+                      isActive ? "bg-gold text-navy" : "text-primary-foreground/80 hover:bg-primary-foreground/10"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
