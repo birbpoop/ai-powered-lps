@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import {
   Upload,
   FileUp,
   ArrowRight,
@@ -14,7 +14,7 @@ import {
   FileText,
   Brain,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useLessonContext } from "@/contexts/LessonContext";
@@ -61,10 +61,7 @@ const isTextFile = (file: File | null): boolean => {
   if (!file) return false;
   const textTypes = ["text/plain", "text/markdown", "text/csv"];
   const textExtensions = [".txt", ".md", ".csv"];
-  return (
-    textTypes.includes(file.type) ||
-    textExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
-  );
+  return textTypes.includes(file.type) || textExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
 };
 
 // Unified text extraction function
@@ -118,20 +115,19 @@ const Index = () => {
     try {
       // Extract text client-side for ALL file types
       const extractedText = await extractTextFromFile(selectedFile);
-      
+
       if (!extractedText || extractedText.trim().length === 0) {
         throw new Error("Could not extract any text from the file. Please try a different file.");
       }
 
       // Send only content_text to the edge function
-      const { data, error } = await supabase.functions.invoke("analyze-file", { 
-        body: { content_text: extractedText } 
+      const { data, error } = await supabase.functions.invoke("analyze-file", {
+        body: { content_text: extractedText },
       });
-
 
       // Map API response to LessonData structure
       const result = data;
-      
+
       const newLessonData = {
         dialogue: {
           content: {
@@ -144,7 +140,7 @@ const Index = () => {
           vocabulary: (result.dialogue?.vocabulary || []).map((v: any) => ({
             word: v.word || "",
             pinyin: v.pinyin || "",
-            level: typeof v.level === 'number' ? v.level : parseInt(v.level) || 0,
+            level: typeof v.level === "number" ? v.level : parseInt(v.level) || 0,
             english: v.english || "",
             partOfSpeech: v.partOfSpeech || "",
             example: v.example || "",
@@ -154,7 +150,7 @@ const Index = () => {
           })),
           grammar: (result.dialogue?.grammar || []).map((g: any) => ({
             pattern: g.pattern || "",
-            level: typeof g.level === 'number' ? g.level : parseInt(g.level) || 0,
+            level: typeof g.level === "number" ? g.level : parseInt(g.level) || 0,
             english: g.english || "",
             example: g.example || "",
           })),
@@ -169,7 +165,7 @@ const Index = () => {
           vocabulary: (result.essay?.vocabulary || []).map((v: any) => ({
             word: v.word || "",
             pinyin: v.pinyin || "",
-            level: typeof v.level === 'number' ? v.level : parseInt(v.level) || 0,
+            level: typeof v.level === "number" ? v.level : parseInt(v.level) || 0,
             english: v.english || "",
             partOfSpeech: v.partOfSpeech || "",
             example: v.example || "",
@@ -179,7 +175,7 @@ const Index = () => {
           })),
           grammar: (result.essay?.grammar || []).map((g: any) => ({
             pattern: g.pattern || "",
-            level: typeof g.level === 'number' ? g.level : parseInt(g.level) || 0,
+            level: typeof g.level === "number" ? g.level : parseInt(g.level) || 0,
             english: g.english || "",
             example: g.example || "",
           })),
@@ -192,15 +188,14 @@ const Index = () => {
 
       // Update context with custom lesson data
       setCustomLessonData(newLessonData);
-      
+
       toast({
         title: "分析完成！",
         description: "正在跳轉至教學模組...",
       });
-      
+
       // Navigate to dashboard
       navigate("/dashboard");
-
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErrorMessage(msg || "Analysis failed");
@@ -260,7 +255,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -325,7 +320,7 @@ const Index = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       {/* Hero Section - Editorial Cover Style */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Split Background */}
@@ -384,7 +379,7 @@ const Index = () => {
               transition={{ delay: 0.5 }}
               className="text-xl sm:text-2xl text-primary-foreground/80 font-light max-w-2xl mx-auto"
             >
-              一鍵生成生詞、語法與教學活動，提升備課效率
+              一鍵文章轉換，學生自學不亂，老師備課不慢。 智慧華語備課系統，讓學習不再限於教材。
             </motion.p>
 
             {/* Features Row - Product Capabilities */}
@@ -395,7 +390,7 @@ const Index = () => {
               className="flex justify-center gap-6 pt-4"
             >
               {productFeatures.map((feature, index) => (
-                <div 
+                <div
                   key={index}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 border border-primary-foreground/20"
                 >
@@ -438,10 +433,7 @@ const Index = () => {
               transition={{ delay: 1 }}
               className="absolute bottom-8 left-1/2 -translate-x-1/2"
             >
-              <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              >
+              <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
                 <ArrowDown className="w-6 h-6 text-primary-foreground/50" />
               </motion.div>
             </motion.div>
@@ -462,12 +454,8 @@ const Index = () => {
               <Cpu className="w-4 h-4" />
               教師備課入口
             </div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
-              上傳課程資料
-            </h2>
-            <p className="text-muted-foreground">
-              拖曳檔案或點擊下方區域，系統將自動解析並整理成教學模組
-            </p>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">上傳課程資料</h2>
+            <p className="text-muted-foreground">拖曳檔案或點擊下方區域，系統將自動解析並整理成教學模組</p>
           </motion.div>
 
           {/* Upload Zone */}
@@ -477,9 +465,7 @@ const Index = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
             className={`relative p-8 sm:p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
-              isDragging
-                ? "border-gold bg-gold/10"
-                : "border-border hover:border-gold/50 hover:bg-muted/50"
+              isDragging ? "border-gold bg-gold/10" : "border-border hover:border-gold/50 hover:bg-muted/50"
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -487,31 +473,25 @@ const Index = () => {
             onClick={handleUploadClick}
           >
             <div className="flex flex-col items-center gap-4 text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${
-                isDragging ? "bg-gold/20" : "bg-muted"
-              }`}>
-                <FileUp className={`w-8 h-8 transition-colors ${
-                  isDragging ? "text-gold" : "text-muted-foreground"
-                }`} />
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${
+                  isDragging ? "bg-gold/20" : "bg-muted"
+                }`}
+              >
+                <FileUp className={`w-8 h-8 transition-colors ${isDragging ? "text-gold" : "text-muted-foreground"}`} />
               </div>
               <div>
                 <p className="font-medium text-foreground">
                   {selectedFile ? selectedFile.name : "拖曳檔案至此或點擊上傳"}
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  支援 TXT、MD、CSV、PDF、DOCX 格式
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">支援 TXT、MD、CSV、PDF、DOCX 格式</p>
               </div>
             </div>
           </motion.div>
 
           {/* File Selected State */}
           {selectedFile && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 space-y-4"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 space-y-4">
               <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border">
                 <FileText className="w-8 h-8 text-gold" />
                 <div className="flex-1 min-w-0">
@@ -563,9 +543,7 @@ const Index = () => {
             transition={{ delay: 0.2 }}
             className="mt-8 text-center"
           >
-            <p className="text-sm text-muted-foreground mb-3">
-              或者先體驗示範課程
-            </p>
+            <p className="text-sm text-muted-foreground mb-3">或者先體驗示範課程</p>
             <button
               onClick={handleDemoClick}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-gold/40 text-gold hover:bg-gold/10 transition-colors"
