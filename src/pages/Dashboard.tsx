@@ -188,7 +188,7 @@ const Dashboard = () => {
                 {/* Demo Stats Tags */}
                 <div className="flex flex-wrap justify-center gap-3 mb-6">
                   <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-sm font-medium">
-                    適用於TBCL各等級(以上傳文件為主)
+                    TBCL Level 5
                   </span>
                   <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
                     Advanced Business Mandarin
