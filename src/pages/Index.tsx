@@ -379,7 +379,8 @@ const Index = () => {
               transition={{ delay: 0.5 }}
               className="text-xl sm:text-2xl text-primary-foreground/80 font-light max-w-2xl mx-auto"
             >
-              一鍵文章轉換，學生自學不亂，老師備課不慢。 智慧華語備課系統，讓學習不再限於教材。
+              一鍵文章轉換，學生自學不亂，老師備課不慢。 <br />
+              智慧華語備課系統，讓學習不再限於教材。
             </motion.p>
 
             {/* Features Row - Product Capabilities */}
