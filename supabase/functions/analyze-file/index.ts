@@ -10,10 +10,39 @@ type AnalyzeBody = {
   content_text: string;
 };
 
-function jsonResponse(body: unknown, status = 200) {
+// Simple in-memory rate limiting (resets on function cold start)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX_REQUESTS = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const MAX_CONTENT_LENGTH = 50000; // 50KB max input
+
+function getClientIP(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+         req.headers.get("x-real-ip") || 
+         "unknown";
+}
+
+function checkRateLimit(clientIP: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(clientIP);
+  
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(clientIP, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+  
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  entry.count++;
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - entry.count };
+}
+
+function jsonResponse(body: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", ...extraHeaders },
   });
 }
 
@@ -31,26 +60,51 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
+  // Rate limiting check
+  const clientIP = getClientIP(req);
+  const rateLimit = checkRateLimit(clientIP);
+  
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      { error: "Rate limit exceeded. Please try again later." }, 
+      429,
+      { "Retry-After": "3600" }
+    );
+  }
+
   try {
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) {
-      return jsonResponse({ error: "Missing OPENAI_API_KEY" }, 500);
+      return jsonResponse({ error: "Service configuration error" }, 500);
     }
 
-    // Frontend must send pre-extracted text content (PDF parsing happens client-side via pdfjs-dist)
-    const { content_text } = (await req.json()) as AnalyzeBody;
-
-    if (!content_text || content_text.trim().length === 0) {
-      return jsonResponse({ error: "Missing content_text - please extract text from your file before sending" }, 400);
+    // Parse and validate input
+    let body: AnalyzeBody;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonResponse({ error: "Invalid JSON body" }, 400);
     }
 
-    const fileContent = content_text;
+    const { content_text } = body;
 
-    if (!fileContent || fileContent.trim().length === 0) {
-      return jsonResponse({ error: "File content is empty." }, 400);
+    // Input validation
+    if (!content_text || typeof content_text !== "string") {
+      return jsonResponse({ error: "Missing or invalid content_text" }, 400);
     }
 
-    // Maintain the 20,000 character truncation safeguard
+    if (content_text.trim().length === 0) {
+      return jsonResponse({ error: "Content text cannot be empty" }, 400);
+    }
+
+    // Enforce max content length
+    if (content_text.length > MAX_CONTENT_LENGTH) {
+      return jsonResponse({ error: "Content too large. Maximum 50,000 characters allowed." }, 400);
+    }
+
+    const fileContent = content_text.trim();
+
+    // Truncation safeguard for AI processing
     const truncated = safeTruncate(fileContent, 20_000);
 
     // Define JSON Schema (Enforcing 15+ vocabulary with multilingual translations + warmUp)
@@ -197,8 +251,8 @@ You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the 
 
     return jsonResponse(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("Edge Function Error:", message);
-    return jsonResponse({ error: message || "Unknown error" }, 500);
+    // Log error internally but don't expose details to client
+    console.error("Edge Function Error:", error instanceof Error ? error.message : String(error));
+    return jsonResponse({ error: "An error occurred processing your request" }, 500);
   }
 });
