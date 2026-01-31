@@ -352,8 +352,8 @@ const Index = () => {
               transition={{ delay: 0.2 }}
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gold/20 border border-gold/40"
             >
-              <span className="text-sm font-medium text-gold-light tracking-wider uppercase">
-                AI-Powered Teaching Preparation Platform
+              <span className="text-sm font-medium text-gold-light tracking-wider">
+                老師、學生都可以使用的平台
               </span>
             </motion.div>
 

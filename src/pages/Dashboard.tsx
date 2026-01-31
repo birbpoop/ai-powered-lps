@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -10,6 +11,7 @@ import {
   AlertCircle,
   Lightbulb,
   Users,
+  PieChart as PieChartIcon,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -21,6 +23,7 @@ import { useLessonContext } from "@/contexts/LessonContext";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // APA Reference component with hanging indent
 const APAReference = ({
@@ -81,6 +84,9 @@ const Dashboard = () => {
   const hasGrammar = lessonData.dialogue.grammar.length > 0 || lessonData.essay.grammar.length > 0;
   const hasContent = hasDialogueContent || hasEssayContent || hasVocabulary || hasGrammar;
 
+  // Determine default tab based on content availability
+  const defaultTab = hasDialogueContent ? "conversation" : hasEssayContent ? "passage" : "conversation";
+
   // Get all vocabulary (10 words) for Module 4
   const allVocabulary = [
     ...lessonData.dialogue.vocabulary.slice(0, 5),
@@ -104,6 +110,21 @@ const Dashboard = () => {
       description: "學生扮演台灣科技公司的發言人，向外國投資者簡報「矽島台灣」的競爭優勢。需包含：產業現況分析、永續發展策略、未來展望。每人3-5分鐘，須使用至少10個本課核心生詞。",
     },
   ];
+
+  // Vocabulary Level Pie Chart Data
+  const LEVEL_COLORS = ['#6B7280', '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+  const vocabForChart = [...lessonData.dialogue.vocabulary, ...lessonData.essay.vocabulary];
+  const levelChartData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    vocabForChart.forEach((v) => {
+      const lvl = v.level === 0 || v.level === "0" || v.level === "無收錄" || v.level === "無" ? "無" : String(v.level);
+      counts[lvl] = (counts[lvl] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({
+      name: name === "無" ? "無收錄" : `Level ${name}`,
+      value,
+    }));
+  }, [vocabForChart]);
 
   // Create keyword map for highlighting
   const keywordMap: Record<string, VocabularyItem> = {};
@@ -277,17 +298,21 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {/* Tabs for Conversation / Short Passage */}
-                <Tabs defaultValue="conversation" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="conversation" className="gap-2">
-                      <MessageCircle className="w-4 h-4" />
-                      會話篇
-                    </TabsTrigger>
-                    <TabsTrigger value="passage" className="gap-2">
-                      <FileText className="w-4 h-4" />
-                      短文篇
-                    </TabsTrigger>
+                {/* Tabs for Conversation / Short Passage - Show only relevant tabs */}
+                <Tabs defaultValue={defaultTab} className="w-full">
+                  <TabsList className={`grid w-full mb-6 ${hasDialogueContent && hasEssayContent ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {hasDialogueContent && (
+                      <TabsTrigger value="conversation" className="gap-2">
+                        <MessageCircle className="w-4 h-4" />
+                        會話篇
+                      </TabsTrigger>
+                    )}
+                    {hasEssayContent && (
+                      <TabsTrigger value="passage" className="gap-2">
+                        <FileText className="w-4 h-4" />
+                        短文篇
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                   {/* Tab A: Conversation */}
@@ -410,6 +435,39 @@ const Dashboard = () => {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
+                {/* Vocabulary Level Pie Chart */}
+                {levelChartData.length > 0 && (
+                  <div className="mb-6 p-4 rounded-xl border border-border bg-muted/30">
+                    <div className="flex items-center gap-2 mb-4">
+                      <PieChartIcon className="w-4 h-4 text-gold" />
+                      <h3 className="text-sm font-semibold text-foreground">生詞等級分佈 (Vocabulary Level Distribution)</h3>
+                    </div>
+                    <div className="h-56 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={levelChartData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={70}
+                            innerRadius={30}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            labelLine={false}
+                          >
+                            {levelChartData.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={LEVEL_COLORS[index % LEVEL_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+                
                 <p className="text-sm text-muted-foreground mb-4">點擊 🔊 收聽標準發音 · 點擊卡片翻轉查看翻譯</p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allVocabulary.slice(0, 9).map((vocab, index) => (
