@@ -9,13 +9,14 @@ import {
   Upload,
   AlertCircle,
   Lightbulb,
+  Users,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import KeywordTooltip from "@/components/KeywordTooltip";
 import VocabularyFlashcard from "@/components/VocabularyFlashcard";
 import RecordingSubmission from "@/components/RecordingSubmission";
-import { VocabularyItem } from "@/data/content";
+import { VocabularyItem, ActivityItem } from "@/data/content";
 import { useLessonContext } from "@/contexts/LessonContext";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -91,6 +92,18 @@ const Dashboard = () => {
 
   // Get activities from lessonData
   const activities = lessonData.activities || [];
+
+  // Demo mode fallback activities
+  const demoActivities: ActivityItem[] = [
+    {
+      title: "模擬論壇辯論 (Simulation Forum Debate)",
+      description: "將學生分為「環保優先派」與「經濟發展派」，針對「是否應該限制半導體產業用水？」這個議題進行辯論。每組需準備3分鐘立場說明，並進行2輪交叉質詢。最後由觀察員投票選出更具說服力的一方。",
+    },
+    {
+      title: "企業簡報挑戰 (Corporate Pitch Challenge)",
+      description: "學生扮演台灣科技公司的發言人，向外國投資者簡報「矽島台灣」的競爭優勢。需包含：產業現況分析、永續發展策略、未來展望。每人3-5分鐘，須使用至少10個本課核心生詞。",
+    },
+  ];
 
   // Create keyword map for highlighting
   const keywordMap: Record<string, VocabularyItem> = {};
@@ -462,51 +475,54 @@ const Dashboard = () => {
                   </div>
                   <div className="text-left">
                     <h2 className="font-serif text-lg font-semibold text-foreground">🎙️ 課堂活動</h2>
-                    <p className="text-sm text-muted-foreground">Classroom Activity</p>
+                    <p className="text-sm text-muted-foreground">Classroom Activities</p>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 space-y-6">
-                {/* Dynamic Activities from API */}
-                {activities.length > 0 ? (
-                  <div className="space-y-4">
-                    {activities.map((activity, index) => (
-                      <div key={index} className="p-4 rounded-lg bg-gold/10 border border-gold/20">
-                        <div className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gold text-navy flex items-center justify-center font-bold text-sm">
-                            {index + 1}
-                          </span>
-                          <div>
-                            <h3 className="font-medium text-foreground mb-1">{activity.title}</h3>
-                            <p className="text-sm text-muted-foreground">{activity.description}</p>
-                          </div>
+                {/* Dynamic Activity Cards */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {(isDemoMode ? demoActivities : activities).map((activity, index) => (
+                    <div key={index} className="p-5 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-navy/10 text-navy">
+                          <Users className="w-5 h-5" />
                         </div>
+                        <span className="text-xs font-bold px-2 py-1 rounded bg-muted text-muted-foreground">
+                          Activity {index + 1}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* Default Activity for Demo Mode */
-                  <div className="p-4 rounded-lg bg-gold/10 border border-gold/20">
-                    <h3 className="font-medium text-foreground mb-2">生詞發音練習與檢測</h3>
-                    <p className="text-sm text-muted-foreground">Vocabulary Pronunciation Practice</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      練習以下 10 個核心生詞的發音，錄音後提交給教師評分
-                    </p>
-                  </div>
+                      <h3 className="font-serif text-lg font-bold text-foreground mb-2">
+                        {activity.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {activity.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Demo Mode Badge */}
+                {isDemoMode && (
+                  <p className="text-xs text-muted-foreground text-center italic">
+                    ⚠️ 示範課程專用活動 (Demo Course Activity Sample)
+                  </p>
                 )}
 
-                {/* All 10 Vocabulary Recording Submissions */}
-                <div>
-                  <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-xs">錄音作業</span>
-                    錄音作業提交 Recording Submission ({allVocabulary.length} 個詞彙)
-                  </h3>
-                  <div className="grid gap-4">
-                    {allVocabulary.map((word, index) => (
-                      <RecordingSubmission key={index} targetText={word.word} targetPinyin={word.pinyin} />
-                    ))}
+                {/* Recording Submissions - Only show in Demo Mode */}
+                {isDemoMode && (
+                  <div className="mt-8 pt-8 border-t border-border">
+                    <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded text-xs">錄音作業</span>
+                      錄音作業提交 Recording Submission ({allVocabulary.length} 個詞彙)
+                    </h3>
+                    <div className="grid gap-4">
+                      {allVocabulary.map((word, index) => (
+                        <RecordingSubmission key={index} targetText={word.word} targetPinyin={word.pinyin} />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
