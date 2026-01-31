@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     // Maintain the 20,000 character truncation safeguard
     const truncated = safeTruncate(fileContent, 20_000);
 
-    // Define JSON Schema (Updated with "無" for unlisted words)
+    // Define JSON Schema (Enforcing 15+ vocabulary with multilingual translations)
     const jsonSchema = `
 {
   "main_level": "string (e.g., 'TBCL Level 4')",
@@ -66,12 +66,12 @@ Deno.serve(async (req) => {
         "word": "string",
         "pinyin": "string",
         "level": "string (Must be '1', '2', '3', '4', '5', '6', '7' or '無')",
-        "english": "string",
+        "english": "string (Required - English translation)",
+        "japanese": "string (Required - Japanese translation)",
+        "korean": "string (Required - Korean translation)",
+        "vietnamese": "string (Required - Vietnamese translation)",
         "partOfSpeech": "string",
-        "example": "string (A new, level-appropriate example sentence based on the word)",
-        "japanese": "string",
-        "korean": "string",
-        "vietnamese": "string"
+        "example": "string (A new, level-appropriate example sentence based on the word)"
       }
     ],
     "grammar": [
@@ -81,18 +81,18 @@ Deno.serve(async (req) => {
   },
   "essay": {
     "title": "string (or empty string if content is a dialogue)",
-    "paragraphs": ["string"],
+    "paragraphs": ["string (COMPLETE paragraphs - do NOT summarize or truncate)"],
     "vocabulary": [
       {
         "word": "string",
         "pinyin": "string",
         "level": "string (Must be '1', '2', '3', '4', '5', '6', '7' or '無')",
-        "english": "string",
+        "english": "string (Required - English translation)",
+        "japanese": "string (Required - Japanese translation)",
+        "korean": "string (Required - Korean translation)",
+        "vietnamese": "string (Required - Vietnamese translation)",
         "partOfSpeech": "string",
-        "example": "string (A new, level-appropriate example sentence based on the word)",
-        "japanese": "string",
-        "korean": "string",
-        "vietnamese": "string"
+        "example": "string (A new, level-appropriate example sentence based on the word)"
       }
     ],
     "grammar": [
@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 }
 `;
 
-    // Updated System Instruction with Strict TBCL Leveling and Content Type Detection
+    // Updated System Instruction with Full Text Preservation, 15+ Vocab, and Multilingual Translations
     const systemInstruction = `
 You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the Chinese Language).
 
@@ -115,27 +115,42 @@ You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the 
 
 **CRITICAL INSTRUCTIONS:**
 
-1.  **Content Type Detection:**
+1.  **Full Text Preservation (MANDATORY):**
+    * You MUST output the **COMPLETE, UNABRIDGED text** from the source file.
+    * For essays: Split the text into logical paragraphs in the \`essay.paragraphs\` array. Include EVERY sentence.
+    * For dialogues: Include ALL speaker lines in the \`dialogue.lines\` array.
+    * **DO NOT summarize, truncate, or omit any part of the original text.**
+
+2.  **Content Type Detection:**
     * Analyze the text structure to determine if it is a **Dialogue** or an **Essay/Article**.
-    * **If Dialogue:** Populate the "dialogue" object with title, lines, vocabulary, and grammar. Leave "essay.paragraphs" as an empty array and "essay.vocabulary"/"essay.grammar" empty.
-    * **If Essay/Article:** Populate the "essay" object with title, paragraphs, vocabulary, and grammar. Leave "dialogue.lines" as an empty array and "dialogue.vocabulary"/"dialogue.grammar" empty.
+    * **If Dialogue:** Populate the "dialogue" object. Leave "essay.paragraphs" empty.
+    * **If Essay/Article:** Populate the "essay" object. Leave "dialogue.lines" empty.
     * Do NOT populate both - only one content type should have data.
 
-2.  **Vocabulary Leveling (Strict):**
-    * You must assign a TBCL Level (1-7) to each extracted word based on the official "14452 Words List".
-    * **IF A WORD IS NOT IN THE OFFICIAL TBCL LIST** (e.g., proper nouns, slang, specialized jargon), you MUST mark the level as **"無"** (single character). Do NOT use "無收錄" or "0" or guess a number.
+3.  **Vocabulary Extraction (Minimum 15 Words):**
+    * Extract **AT LEAST 15** vocabulary words from the text.
+    * If the text is very short, extract as many meaningful words as possible.
+    * You must assign a TBCL Level (1-7) to each word based on the official "14452 Words List".
+    * **IF A WORD IS NOT IN THE OFFICIAL TBCL LIST** (e.g., proper nouns, slang, specialized jargon), mark the level as **"無"** (single character).
 
-3.  **Example Sentences:**
+4.  **Multilingual Translations (MANDATORY for every word):**
+    * For EVERY vocabulary word, you MUST provide accurate translations in ALL 4 languages:
+        * **english**: English translation
+        * **japanese**: Japanese translation (use Kanji/Hiragana)
+        * **korean**: Korean translation (use Hangul)
+        * **vietnamese**: Vietnamese translation
+    * These fields are REQUIRED. Do not leave them empty.
+
+5.  **Example Sentences:**
     * For every vocabulary word, generate a **NEW** example sentence (例句).
     * The sentence must be appropriate for the word's level.
 
-4.  **Classroom Activities (Dynamic):**
+6.  **Classroom Activities (Dynamic):**
     * Create exactly **2** operational classroom activities based on the text content.
-    * **Do NOT** use the generic "Debate" or "Sales Pitch" unless specifically relevant. Create unique activities (e.g., Role Play, Jigsaw Reading, Information Gap, Interview, Survey, Ranking Task, Problem Solving) tailored to this specific lesson.
-    * **Level Fit:** Activities must be appropriate for the estimated TBCL level (e.g., Level 1-2 focuses on pairing/matching; Level 5+ focuses on debate/presentation).
-    * Provide a clear 'title' and a 'description' explaining how to conduct the activity in class.
+    * Create unique activities (e.g., Role Play, Jigsaw Reading, Information Gap, Interview) tailored to this specific lesson.
+    * Provide a clear 'title' and a 'description' explaining how to conduct the activity.
 
-5.  **Summary:** Provide a concise summary of the key points in Chinese.
+7.  **Summary:** Provide a concise summary of the key points in Chinese.
 
 **Output:** Strictly valid JSON matching the schema. No markdown, no code blocks.
 `;
