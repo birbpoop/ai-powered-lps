@@ -182,6 +182,7 @@ const Index = () => {
           references: result.essay?.references || [],
         },
         summary: result.summary || "",
+        warmUp: result.warm_up || [],
         mainLevel: result.main_level || "",
         activities: result.activities || [],
       };

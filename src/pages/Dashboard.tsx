@@ -253,6 +253,23 @@ const Dashboard = () => {
                     <p className="text-sm text-muted-foreground leading-relaxed">{lessonData.summary}</p>
                   </div>
                 )}
+                {/* Warm Up Section */}
+                {lessonData.warmUp && lessonData.warmUp.length > 0 && (
+                  <div className="mt-4 p-4 rounded-lg bg-gold/10 border border-gold/30 text-left max-w-2xl mx-auto">
+                    <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4 text-gold" />
+                      課前暖身 Warm Up
+                    </h3>
+                    <ul className="space-y-2">
+                      {lessonData.warmUp.map((question, idx) => (
+                        <li key={idx} className="text-sm text-muted-foreground leading-relaxed flex gap-2">
+                          <span className="text-gold font-medium">{idx + 1}.</span>
+                          <span>{question}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </>
             )}
           </motion.div>

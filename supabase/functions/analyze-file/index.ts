@@ -53,11 +53,12 @@ Deno.serve(async (req) => {
     // Maintain the 20,000 character truncation safeguard
     const truncated = safeTruncate(fileContent, 20_000);
 
-    // Define JSON Schema (Enforcing 15+ vocabulary with multilingual translations)
+    // Define JSON Schema (Enforcing 15+ vocabulary with multilingual translations + warmUp)
     const jsonSchema = `
 {
   "main_level": "string (e.g., 'TBCL Level 4')",
   "summary": "string (A concise summary of the text's key points in Chinese)",
+  "warm_up": ["string (At least 1-2 discussion questions to inspire students/teachers before the lesson)"],
   "dialogue": {
     "title": "string (or empty string if content is an essay)",
     "lines": [ { "speaker": "string", "text": "string" } ],
@@ -107,7 +108,7 @@ Deno.serve(async (req) => {
 }
 `;
 
-    // Updated System Instruction with Full Text Preservation, 15+ Vocab, and Multilingual Translations
+    // Updated System Instruction with Full Text Preservation, 15+ Vocab, Multilingual Translations, and Warm Up
     const systemInstruction = `
 You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the Chinese Language).
 
@@ -145,12 +146,17 @@ You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the 
     * For every vocabulary word, generate a **NEW** example sentence (例句).
     * The sentence must be appropriate for the word's level.
 
-6.  **Classroom Activities (Dynamic):**
+6.  **Warm Up Questions (MANDATORY):**
+    * Generate **1-2 discussion questions** in the "warm_up" array.
+    * These questions should inspire students or teachers before the lesson begins.
+    * Questions should be related to the lesson's theme and encourage critical thinking.
+
+7.  **Classroom Activities (Dynamic):**
     * Create exactly **2** operational classroom activities based on the text content.
     * Create unique activities (e.g., Role Play, Jigsaw Reading, Information Gap, Interview) tailored to this specific lesson.
     * Provide a clear 'title' and a 'description' explaining how to conduct the activity.
 
-7.  **Summary:** Provide a concise summary of the key points in Chinese.
+8.  **Summary:** Provide a concise summary of the key points in Chinese.
 
 **Output:** Strictly valid JSON matching the schema. No markdown, no code blocks.
 `;
