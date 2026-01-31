@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Scale, ShoppingBag, Save, RotateCcw, CheckCircle, Mic, Upload, BookOpen, Library, AlertCircle } from "lucide-react";
+import { z } from "zod";
 import Navigation from "@/components/Navigation";
 import RecordingSubmission from "@/components/RecordingSubmission";
 import ReferencesSection from "@/components/ReferencesSection";
@@ -11,6 +12,22 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useLessonContext } from "@/contexts/LessonContext";
+
+// Zod schemas for localStorage data validation
+const DebateNotesSchema = z.object({
+  proArguments: z.string(),
+  conArguments: z.string(),
+  judgeComments: z.string(),
+});
+
+const SalesNotesSchema = z.object({
+  sellerName: z.string(),
+  attractionReasons: z.string(),
+  productConcerns: z.string(),
+  answeredConcerns: z.boolean().nullable(),
+  additionalNotes: z.string(),
+});
+
 interface DebateNotes {
   proArguments: string;
   conArguments: string;
@@ -44,16 +61,30 @@ const Activities = () => {
     additionalNotes: "",
   });
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount with schema validation
   useEffect(() => {
     const savedDebate = localStorage.getItem("siliconIsland_debateNotes");
     const savedSales = localStorage.getItem("siliconIsland_salesNotes");
     
     if (savedDebate) {
-      setDebateNotes(JSON.parse(savedDebate));
+      try {
+        const parsed = JSON.parse(savedDebate);
+        const validated = DebateNotesSchema.parse(parsed);
+        setDebateNotes(validated as DebateNotes);
+      } catch {
+        // Invalid data - remove corrupted localStorage entry
+        localStorage.removeItem("siliconIsland_debateNotes");
+      }
     }
     if (savedSales) {
-      setSalesNotes(JSON.parse(savedSales));
+      try {
+        const parsed = JSON.parse(savedSales);
+        const validated = SalesNotesSchema.parse(parsed);
+        setSalesNotes(validated as SalesNotes);
+      } catch {
+        // Invalid data - remove corrupted localStorage entry
+        localStorage.removeItem("siliconIsland_salesNotes");
+      }
     }
   }, []);
 
