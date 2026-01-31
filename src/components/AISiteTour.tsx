@@ -16,12 +16,12 @@ const tourSteps: TourStep[] = [
   {
     id: "welcome",
     title: "歡迎使用智慧華語備課系統",
-    description: "這是一個專為華語教師設計的數位備課平台。讓我帶您快速了解各項功能！",
+    description: "專為華語教師與學習者設計的數位平台。讓我帶您快速了解各項功能！",
   },
   {
     id: "upload",
     title: "檔案上傳區",
-    description: "在這裡上傳您的課程資料，系統會自動解析並整理成教學模組。",
+    description: "在這裡上傳您的資料，系統會自動解析並整理成教學模組。",
     path: "/",
   },
   {
@@ -117,16 +117,11 @@ const AISiteTour = () => {
             >
               <div className="flex items-start justify-between mb-3">
                 <h3 className="font-serif font-semibold text-foreground">AI 導覽助手</h3>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
+                <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                需要了解網站功能嗎？讓我帶您快速導覽各個學習區塊！
-              </p>
+              <p className="text-sm text-muted-foreground mb-4">需要了解網站功能嗎？讓我帶您快速導覽各個學習區塊！</p>
               <Button onClick={startTour} className="w-full" size="sm">
                 <Bot className="w-4 h-4 mr-2" />
                 開始導覽
@@ -186,34 +181,20 @@ const AISiteTour = () => {
                   <Bot className="w-5 h-5 text-secondary-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-semibold text-foreground mb-1">
-                    {currentTourStep.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {currentTourStep.description}
-                  </p>
+                  <h3 className="font-serif font-semibold text-foreground mb-1">{currentTourStep.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{currentTourStep.description}</p>
                 </div>
               </div>
 
               {/* Navigation */}
               <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={endTour}
-                  className="text-muted-foreground"
-                >
+                <Button variant="ghost" size="sm" onClick={endTour} className="text-muted-foreground">
                   <X className="w-4 h-4 mr-1" />
                   結束導覽
                 </Button>
 
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={prevStep}
-                    disabled={currentStep === 0}
-                  >
+                  <Button variant="outline" size="sm" onClick={prevStep} disabled={currentStep === 0}>
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
                   <Button size="sm" onClick={nextStep}>
