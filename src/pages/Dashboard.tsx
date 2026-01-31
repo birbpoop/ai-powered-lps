@@ -103,16 +103,18 @@ const Dashboard = () => {
   const demoActivities: ActivityItem[] = [
     {
       title: "模擬論壇辯論 (Simulation Forum Debate)",
-      description: "將學生分為「環保優先派」與「經濟發展派」，針對「是否應該限制半導體產業用水？」這個議題進行辯論。每組需準備3分鐘立場說明，並進行2輪交叉質詢。最後由觀察員投票選出更具說服力的一方。",
+      description:
+        "將學生分為「環保優先派」與「經濟發展派」，針對「是否應該限制半導體產業用水？」這個議題進行辯論。每組需準備3分鐘立場說明，並進行2輪交叉質詢。最後由觀察員投票選出更具說服力的一方。",
     },
     {
       title: "企業簡報挑戰 (Corporate Pitch Challenge)",
-      description: "學生扮演台灣科技公司的發言人，向外國投資者簡報「矽島台灣」的競爭優勢。需包含：產業現況分析、永續發展策略、未來展望。每人3-5分鐘，須使用至少10個本課核心生詞。",
+      description:
+        "學生扮演台灣科技公司的發言人，向外國投資者簡報「矽島台灣」的競爭優勢。需包含：產業現況分析、永續發展策略、未來展望。每人3-5分鐘，須使用至少10個本課核心生詞。",
     },
   ];
 
   // Vocabulary Level Pie Chart Data
-  const LEVEL_COLORS = ['#6B7280', '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+  const LEVEL_COLORS = ["#6B7280", "#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d", "#ffc658"];
   const vocabForChart = [...lessonData.dialogue.vocabulary, ...lessonData.essay.vocabulary];
   const levelChartData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -228,10 +230,10 @@ const Dashboard = () => {
                     Advanced Business Mandarin
                   </span>
                   <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy/10 text-navy text-sm font-medium">
-                    40+ Core Vocab
+                    Core Vocab
                   </span>
                   <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted text-muted-foreground text-sm font-medium">
-                    13 Grammar Points
+                    Grammar Points
                   </span>
                 </div>
               </>
@@ -317,7 +319,9 @@ const Dashboard = () => {
 
                 {/* Tabs for Conversation / Short Passage - Show only relevant tabs */}
                 <Tabs defaultValue={defaultTab} className="w-full">
-                  <TabsList className={`grid w-full mb-6 ${hasDialogueContent && hasEssayContent ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <TabsList
+                    className={`grid w-full mb-6 ${hasDialogueContent && hasEssayContent ? "grid-cols-2" : "grid-cols-1"}`}
+                  >
                     {hasDialogueContent && (
                       <TabsTrigger value="conversation" className="gap-2">
                         <MessageCircle className="w-4 h-4" />
@@ -397,7 +401,10 @@ const Dashboard = () => {
 
                       <div className="mb-6 space-y-4">
                         {/* Render ALL paragraphs - no slicing for uploaded content */}
-                        {(isDemoMode ? lessonData.essay.content.paragraphs.slice(0, 2) : lessonData.essay.content.paragraphs).map((para, index) => (
+                        {(isDemoMode
+                          ? lessonData.essay.content.paragraphs.slice(0, 2)
+                          : lessonData.essay.content.paragraphs
+                        ).map((para, index) => (
                           <p key={index} className="text-foreground leading-loose indent-8">
                             {highlightKeywords(para)}
                           </p>
@@ -459,7 +466,9 @@ const Dashboard = () => {
                   <div className="mb-6 p-4 rounded-xl border border-border bg-muted/30">
                     <div className="flex items-center gap-2 mb-4">
                       <PieChartIcon className="w-4 h-4 text-gold" />
-                      <h3 className="text-sm font-semibold text-foreground">生詞等級分佈 (Vocabulary Level Distribution)</h3>
+                      <h3 className="text-sm font-semibold text-foreground">
+                        生詞等級分佈 (Vocabulary Level Distribution)
+                      </h3>
                     </div>
                     <div className="h-56 w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -486,7 +495,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 )}
-                
+
                 <p className="text-sm text-muted-foreground mb-4">點擊 🔊 收聽標準發音 · 點擊卡片翻轉查看翻譯</p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allVocabulary.slice(0, 9).map((vocab, index) => (
@@ -560,7 +569,10 @@ const Dashboard = () => {
                 {/* Dynamic Activity Cards */}
                 <div className="grid md:grid-cols-2 gap-4">
                   {(isDemoMode ? demoActivities : activities).map((activity, index) => (
-                    <div key={index} className="p-5 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
+                    <div
+                      key={index}
+                      className="p-5 rounded-xl border border-border bg-card hover:shadow-md transition-shadow"
+                    >
                       <div className="flex items-start justify-between mb-3">
                         <div className="p-2 rounded-lg bg-navy/10 text-navy">
                           <Users className="w-5 h-5" />
@@ -569,12 +581,8 @@ const Dashboard = () => {
                           Activity {index + 1}
                         </span>
                       </div>
-                      <h3 className="font-serif text-lg font-bold text-foreground mb-2">
-                        {activity.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {activity.description}
-                      </p>
+                      <h3 className="font-serif text-lg font-bold text-foreground mb-2">{activity.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{activity.description}</p>
                     </div>
                   ))}
                 </div>
