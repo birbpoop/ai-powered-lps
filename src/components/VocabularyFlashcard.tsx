@@ -103,11 +103,12 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
             <h3 className="text-xl font-bold text-white mb-1">{vocabulary.word}</h3>
             <p className="text-sm text-white/80 mb-3">{vocabulary.english}</p>
             
-            {/* Translations Grid */}
-            <div className="grid grid-cols-1 gap-1 text-xs text-white/60 mb-3 border-t border-white/10 pt-2">
-              {vocabulary.japanese && <p>JP: {vocabulary.japanese}</p>}
-              {vocabulary.korean && <p>KR: {vocabulary.korean}</p>}
-              {vocabulary.vietnamese && <p>VN: {vocabulary.vietnamese}</p>}
+            {/* Multilingual Translations Grid */}
+            <div className="grid grid-cols-1 gap-1.5 text-xs text-white/80 mb-3 border-t border-white/10 pt-2">
+              <div className="flex gap-2"><span className="opacity-50 w-6 shrink-0">EN</span> <span>{vocabulary.english || "—"}</span></div>
+              <div className="flex gap-2"><span className="opacity-50 w-6 shrink-0">JP</span> <span>{vocabulary.japanese || "—"}</span></div>
+              <div className="flex gap-2"><span className="opacity-50 w-6 shrink-0">KR</span> <span>{vocabulary.korean || "—"}</span></div>
+              <div className="flex gap-2"><span className="opacity-50 w-6 shrink-0">VN</span> <span>{vocabulary.vietnamese || "—"}</span></div>
             </div>
 
             {/* Dynamic Example Sentence - Always at bottom */}

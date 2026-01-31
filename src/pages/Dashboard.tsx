@@ -379,12 +379,14 @@ const Dashboard = () => {
                       </div>
 
                       <div className="mb-6 space-y-4">
-                        {lessonData.essay.content.paragraphs.slice(0, 2).map((para, index) => (
+                        {/* Render ALL paragraphs - no slicing for uploaded content */}
+                        {(isDemoMode ? lessonData.essay.content.paragraphs.slice(0, 2) : lessonData.essay.content.paragraphs).map((para, index) => (
                           <p key={index} className="text-foreground leading-loose indent-8">
                             {highlightKeywords(para)}
                           </p>
                         ))}
-                        {lessonData.essay.content.paragraphs.length > 2 && (
+                        {/* Only show "View Full" link in demo mode when there's more content */}
+                        {isDemoMode && lessonData.essay.content.paragraphs.length > 2 && (
                           <div className="text-center py-4">
                             <Link
                               to="/essay"
