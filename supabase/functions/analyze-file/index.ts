@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     // Truncation safeguard for AI processing
     const truncated = safeTruncate(fileContent, 20_000);
 
-    // Define JSON Schema (Enforcing 15+ vocabulary with multilingual translations + warmUp)
+    // Define JSON Schema (Enforcing 15+ vocabulary with multilingual translations + warmUp + grammar from official TBCL table)
     const jsonSchema = `
 {
   "main_level": "string (e.g., 'TBCL Level 4')",
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
       }
     ],
     "grammar": [
-      { "pattern": "string", "level": number, "english": "string", "example": "string", "note": "語法點僅供參考" }
+      { "pattern": "string (Must be from official TBCL grammar list)", "level": number (1-7), "english": "string", "example": "string (Must be level-appropriate from official TBCL table)", "note": "語法點僅供參考" }
     ],
     "references": []
   },
@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
       }
     ],
     "grammar": [
-      { "pattern": "string", "level": number, "english": "string", "example": "string", "note": "語法點僅供參考" }
+      { "pattern": "string (Must be from official TBCL grammar list)", "level": number (1-7), "english": "string", "example": "string (Must be level-appropriate from official TBCL table)", "note": "語法點僅供參考" }
     ],
     "references": []
   },
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
 }
 `;
 
-    // Updated System Instruction with Full Text Preservation, 15+ Vocab, Multilingual Translations, and Warm Up
+    // Updated System Instruction with Full Text Preservation, 15+ Vocab, Multilingual Translations, Warm Up, and Official TBCL Grammar
     const systemInstruction = `
 You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the Chinese Language).
 
@@ -205,12 +205,24 @@ You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the 
     * These questions should inspire students or teachers before the lesson begins.
     * Questions should be related to the lesson's theme and encourage critical thinking.
 
-7.  **Classroom Activities (Dynamic):**
+7.  **Grammar Point Extraction (MANDATORY - Minimum 3 Points):**
+    * Extract **AT LEAST 3** grammar points from the text.
+    * **CRITICAL: You MUST use grammar patterns from the official TBCL Grammar Point Table (臺灣華語文能力基準語法點表).**
+    * **DO NOT invent or fabricate grammar patterns.** Examples of INVALID patterns: "帶沒帶回" (this is NOT a grammar point).
+    * Valid grammar patterns include (examples by level):
+      - Level 1: 繫動詞, 不, 這／那／哪, 什麼, 嗎
+      - Level 2: V了, 會, V著, 如果, 時量補語, 但是, A-not-A, 因為……所以, 太Vs了, 又……又……, A比B……, 一……就……
+      - Level 3: 越來越……, 一邊……一邊……, 先……再……, 就要……了, 對……有興趣, 為了, VV看
+      - Level 4: 不論／無論, 卻, 既……又, 把……V, 被……V, 一般來說
+      - Level 5: 透過, 以……為……, 視……而定, 於是, 難免, 好在, 事實上, 換句話說, 反之, 小自……大至……, 竟
+    * Each grammar point MUST include a level-appropriate example sentence from the official table.
+
+8.  **Classroom Activities (Dynamic):**
     * Create exactly **2** operational classroom activities based on the text content.
     * Create unique activities (e.g., Role Play, Jigsaw Reading, Information Gap, Interview) tailored to this specific lesson.
     * Provide a clear 'title' and a 'description' explaining how to conduct the activity.
 
-8.  **Summary:** Provide a concise summary of the key points in Chinese.
+9.  **Summary:** Provide a concise summary of the key points in Chinese.
 
 **Output:** Strictly valid JSON matching the schema. No markdown, no code blocks.
 `;
