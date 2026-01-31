@@ -9,24 +9,42 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLessonContext } from "@/contexts/LessonContext";
 
-const allVocabularyData = [...dialogueVocabulary, ...essayVocabulary];
 const Vocabulary = () => {
   const navigate = useNavigate();
   const { isParsed, isDemoMode, lessonData } = useLessonContext();
   const [searchTerm, setSearchTerm] = useState("");
-  const [levelFilter, setLevelFilter] = useState<number | null>(null);
+  const [levelFilter, setLevelFilter] = useState<string | null>(null);
 
   // Get vocabulary from context or use empty array
   const allVocabulary = isParsed && lessonData 
     ? [...lessonData.dialogue.vocabulary, ...lessonData.essay.vocabulary]
     : [];
 
+  // Normalize level display: "0", "無收錄", 0 -> "無"
+  const normalizeLevel = (level: number | string): string => {
+    if (level === 0 || level === "0" || level === "無收錄" || level === "無") return "無";
+    return String(level);
+  };
+
+  // Get unique levels for filter buttons
+  const uniqueLevels = useMemo(() => {
+    const levels = new Set<string>();
+    allVocabulary.forEach((v) => levels.add(normalizeLevel(v.level)));
+    // Sort: "無" first, then numeric levels
+    return Array.from(levels).sort((a, b) => {
+      if (a === "無") return -1;
+      if (b === "無") return 1;
+      return parseInt(a) - parseInt(b);
+    });
+  }, [allVocabulary]);
+
   const filteredVocabulary = useMemo(() => {
     return allVocabulary.filter((vocab) => {
       const matchesSearch = 
         vocab.word.includes(searchTerm) ||
         vocab.english.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesLevel = levelFilter === null || vocab.level === levelFilter;
+      const normalizedLevel = normalizeLevel(vocab.level);
+      const matchesLevel = levelFilter === null || normalizedLevel === levelFilter;
       return matchesSearch && matchesLevel;
     });
   }, [allVocabulary, searchTerm, levelFilter]);
@@ -119,7 +137,7 @@ const Vocabulary = () => {
                 className="pl-10 h-12 text-base"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setLevelFilter(null)}
                 className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
@@ -131,26 +149,21 @@ const Vocabulary = () => {
                 <Filter className="w-4 h-4" />
                 全部
               </button>
-              <button
-                onClick={() => setLevelFilter(6)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  levelFilter === 6
-                    ? 'bg-secondary text-secondary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                Level 6
-              </button>
-              <button
-                onClick={() => setLevelFilter(7)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  levelFilter === 7
-                    ? 'bg-navy text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                Level 7
-              </button>
+              {uniqueLevels.map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setLevelFilter(level)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    levelFilter === level
+                      ? level === "無" 
+                        ? 'bg-muted-foreground text-background'
+                        : 'bg-gold text-navy'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {level === "無" ? "無收錄" : `Level ${level}`}
+                </button>
+              ))}
             </div>
           </motion.div>
 
@@ -180,7 +193,7 @@ const Vocabulary = () => {
               >
                 <VocabularyCard
                   word={vocab.word}
-                  level={vocab.level}
+                  level={normalizeLevel(vocab.level) === "無" ? "無" : vocab.level}
                   english={vocab.english}
                   partOfSpeech={vocab.partOfSpeech}
                   example={vocab.example}

@@ -149,6 +149,9 @@ const Activities = () => {
     );
   }
 
+  // Get activities from lessonData for non-demo mode
+  const customActivities = lessonData.activities || [];
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -171,18 +174,51 @@ const Activities = () => {
             {!isDemoMode && (
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-navy/10 text-navy text-sm font-medium mb-4">
                 <Users className="w-4 h-4" />
-                課室活動
+                AI生成活動
               </div>
             )}
             <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground mb-4">
               互動式學習活動
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              透過辯論、銷售演練與發音練習，深化對永續發展議題的理解
+              {isDemoMode 
+                ? "透過辯論、銷售演練與發音練習，深化對永續發展議題的理解"
+                : "根據您上傳的課文內容，AI 自動生成的課堂活動"
+              }
             </p>
           </motion.div>
 
-          {/* Activity Tabs */}
+          {/* AI-Generated Activities for Non-Demo Mode */}
+          {!isDemoMode && customActivities.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-12"
+            >
+              <div className="grid md:grid-cols-2 gap-6">
+                {customActivities.map((activity, index) => (
+                  <div key={index} className="p-6 rounded-2xl border border-border bg-card shadow-card hover:shadow-lg transition-shadow">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 rounded-lg bg-gold/20 text-navy font-bold text-sm">
+                        Activity {index + 1}
+                      </div>
+                    </div>
+                    <h3 className="font-serif text-xl font-bold text-foreground mb-3">
+                      {activity.title}
+                    </h3>
+                    <div className="w-full h-px bg-border mb-3"></div>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {activity.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Demo Mode: Full Activity Tabs */}
+          {isDemoMode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -457,9 +493,10 @@ const Activities = () => {
               </TabsContent>
             </Tabs>
           </motion.div>
+          )}
 
-          {/* References */}
-          <ReferencesSection />
+          {/* References - Only show in Demo Mode */}
+          {isDemoMode && <ReferencesSection />}
         </div>
       </main>
     </div>

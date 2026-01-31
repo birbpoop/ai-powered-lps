@@ -53,19 +53,19 @@ Deno.serve(async (req) => {
     // Maintain the 20,000 character truncation safeguard
     const truncated = safeTruncate(fileContent, 20_000);
 
-    // Define JSON Schema (Updated with "無收錄" for unlisted words)
+    // Define JSON Schema (Updated with "無" for unlisted words)
     const jsonSchema = `
 {
   "main_level": "string (e.g., 'TBCL Level 4')",
   "summary": "string (A concise summary of the text's key points in Chinese)",
   "dialogue": {
-    "title": "string",
+    "title": "string (or empty string if content is an essay)",
     "lines": [ { "speaker": "string", "text": "string" } ],
     "vocabulary": [
       {
         "word": "string",
         "pinyin": "string",
-        "level": "string (Must be '1', '2', '3', '4', '5', '6', '7' or '無收錄')",
+        "level": "string (Must be '1', '2', '3', '4', '5', '6', '7' or '無')",
         "english": "string",
         "partOfSpeech": "string",
         "example": "string (A new, level-appropriate example sentence based on the word)",
@@ -80,10 +80,24 @@ Deno.serve(async (req) => {
     "references": []
   },
   "essay": {
-    "title": "string",
+    "title": "string (or empty string if content is a dialogue)",
     "paragraphs": ["string"],
-    "vocabulary": [],
-    "grammar": [],
+    "vocabulary": [
+      {
+        "word": "string",
+        "pinyin": "string",
+        "level": "string (Must be '1', '2', '3', '4', '5', '6', '7' or '無')",
+        "english": "string",
+        "partOfSpeech": "string",
+        "example": "string (A new, level-appropriate example sentence based on the word)",
+        "japanese": "string",
+        "korean": "string",
+        "vietnamese": "string"
+      }
+    ],
+    "grammar": [
+      { "pattern": "string", "level": number, "english": "string", "example": "string", "note": "語法點僅供參考" }
+    ],
     "references": []
   },
   "activities": [
@@ -93,7 +107,7 @@ Deno.serve(async (req) => {
 }
 `;
 
-    // Updated System Instruction with Strict TBCL Leveling
+    // Updated System Instruction with Strict TBCL Leveling and Content Type Detection
     const systemInstruction = `
 You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the Chinese Language).
 
@@ -101,21 +115,27 @@ You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the 
 
 **CRITICAL INSTRUCTIONS:**
 
-1.  **Vocabulary Leveling (Strict):**
-    * You must assign a TBCL Level (1-7) to each extracted word based on the official "14452 Words List".
-    * **IF A WORD IS NOT IN THE OFFICIAL TBCL LIST** (e.g., proper nouns, slang, specialized jargon), you MUST mark the level as **"無收錄"**. Do NOT guess a number for non-listed words.
+1.  **Content Type Detection:**
+    * Analyze the text structure to determine if it is a **Dialogue** or an **Essay/Article**.
+    * **If Dialogue:** Populate the "dialogue" object with title, lines, vocabulary, and grammar. Leave "essay.paragraphs" as an empty array and "essay.vocabulary"/"essay.grammar" empty.
+    * **If Essay/Article:** Populate the "essay" object with title, paragraphs, vocabulary, and grammar. Leave "dialogue.lines" as an empty array and "dialogue.vocabulary"/"dialogue.grammar" empty.
+    * Do NOT populate both - only one content type should have data.
 
-2.  **Example Sentences:**
+2.  **Vocabulary Leveling (Strict):**
+    * You must assign a TBCL Level (1-7) to each extracted word based on the official "14452 Words List".
+    * **IF A WORD IS NOT IN THE OFFICIAL TBCL LIST** (e.g., proper nouns, slang, specialized jargon), you MUST mark the level as **"無"** (single character). Do NOT use "無收錄" or "0" or guess a number.
+
+3.  **Example Sentences:**
     * For every vocabulary word, generate a **NEW** example sentence (例句).
     * The sentence must be appropriate for the word's level.
 
-3.  **Classroom Activities (Dynamic):**
+4.  **Classroom Activities (Dynamic):**
     * Create exactly **2** operational classroom activities based on the text content.
     * **Do NOT** use the generic "Debate" or "Sales Pitch" unless specifically relevant. Create unique activities (e.g., Role Play, Jigsaw Reading, Information Gap, Interview, Survey, Ranking Task, Problem Solving) tailored to this specific lesson.
     * **Level Fit:** Activities must be appropriate for the estimated TBCL level (e.g., Level 1-2 focuses on pairing/matching; Level 5+ focuses on debate/presentation).
     * Provide a clear 'title' and a 'description' explaining how to conduct the activity in class.
 
-4.  **Summary:** Provide a concise summary of the key points in Chinese.
+5.  **Summary:** Provide a concise summary of the key points in Chinese.
 
 **Output:** Strictly valid JSON matching the schema. No markdown, no code blocks.
 `;
