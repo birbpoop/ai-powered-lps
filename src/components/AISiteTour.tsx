@@ -26,32 +26,32 @@ const tourSteps: TourStep[] = [
   },
   {
     id: "warmup",
-    title: "課前暖身 (Section 1)",
-    description: "顯示課前討論問題，幫助進入學習狀態。",
+    title: "課前暖身與摘要 (Section 1)",
+    description: "顯示課前討論問題與文章摘要，幫助學生進入學習狀態。",
     path: "/dialogue",
   },
   {
     id: "content",
     title: "內容 (Section 2)",
-    description: "會話篇或短文篇的完整內容，關鍵詞彙會自動標記，滑鼠懸停可查看多語翻譯。",
+    description: "會話篇與短文篇的完整內容，關鍵詞彙會自動標記，滑鼠懸停可查看多語翻譯。",
     path: "/dialogue",
   },
   {
     id: "vocabulary",
     title: "生詞庫 (Section 3)",
-    description: "核心詞彙卡片，包含拼音、詞性與翻譯。點擊喇叭可聽發音。",
+    description: "核心詞彙卡片，包含拼音、詞性與多語翻譯。點擊喇叭可聽發音。",
     path: "/vocabulary",
   },
   {
     id: "grammar",
     title: "語法點 (Section 4)",
-    description: "重要語法結構，幫助學生掌握語言規則。",
+    description: "重要語法結構的說明與例句，幫助學生掌握語言規則。",
     path: "/dialogue",
   },
   {
     id: "activities",
     title: "課堂活動 (Section 5)",
-    description: "智慧生成兩種活動，給老師靈感、讓學生練習。",
+    description: "生詞發音練習與錄音提交功能，讓學生練習並提交給教師評分。",
     path: "/activities",
   },
 ];
