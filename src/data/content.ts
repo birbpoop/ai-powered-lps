@@ -1,7 +1,7 @@
 export interface VocabularyItem {
   word: string;
   pinyin: string;
-  level: number;
+  level: number | string; // Can be 1-7 or "無收錄" for unlisted words
   english: string;
   partOfSpeech?: string;
   example?: string;

@@ -5,7 +5,7 @@ import { Volume2 } from "lucide-react";
 
 interface KeywordData {
   word: string;
-  level?: number;
+  level?: number | string; // Can be 1-7 or "無收錄"
   english?: string;
   japanese?: string;
   korean?: string;
@@ -101,11 +101,13 @@ const KeywordTooltip = ({ keyword, children }: KeywordTooltipProps) => {
                   )}
                   {keyword.level && (
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      keyword.level >= 7 
-                        ? 'bg-navy text-primary-foreground' 
-                        : 'bg-secondary text-secondary-foreground'
+                      keyword.level === "無收錄"
+                        ? 'bg-muted text-muted-foreground'
+                        : typeof keyword.level === 'number' && keyword.level >= 7 
+                          ? 'bg-navy text-primary-foreground' 
+                          : 'bg-secondary text-secondary-foreground'
                     }`}>
-                      L{keyword.level}
+                      {keyword.level === "無收錄" ? "無收錄" : `L${keyword.level}`}
                     </span>
                   )}
                 </div>

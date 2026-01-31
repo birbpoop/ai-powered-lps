@@ -4,7 +4,7 @@ import { Volume2, RotateCcw } from "lucide-react";
 
 interface VocabularyCardProps {
   word: string;
-  level: number;
+  level: number | string; // Can be 1-7 or "無收錄"
   english: string;
   partOfSpeech?: string;
   example?: string;
@@ -42,11 +42,13 @@ const VocabularyCard = ({ word, level, english, partOfSpeech, example }: Vocabul
         >
           <div className="absolute top-3 right-3 flex items-center gap-2">
             <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              level === 7 
-                ? "bg-navy text-primary-foreground" 
-                : "bg-secondary text-secondary-foreground"
+              level === "無收錄"
+                ? "bg-muted text-muted-foreground"
+                : level === 7 || (typeof level === 'string' && level === '7')
+                  ? "bg-navy text-primary-foreground" 
+                  : "bg-secondary text-secondary-foreground"
             }`}>
-              Level {level}
+              {level === "無收錄" ? "無收錄" : `Level ${level}`}
             </span>
           </div>
           
