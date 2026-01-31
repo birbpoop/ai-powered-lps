@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     // Maintain the 20,000 character truncation safeguard
     const truncated = safeTruncate(fileContent, 20_000);
 
-    // Define JSON Schema (Updated with Summary & Strict Constraints)
+    // Define JSON Schema (Updated with "無收錄" for unlisted words)
     const jsonSchema = `
 {
   "main_level": "string (e.g., 'TBCL Level 4')",
@@ -65,10 +65,10 @@ Deno.serve(async (req) => {
       {
         "word": "string",
         "pinyin": "string",
-        "level": number (Must be 1, 2, 3, 4, 5, 6, 7 or 0 for unknown/X),
+        "level": "string (Must be '1', '2', '3', '4', '5', '6', '7' or '無收錄')",
         "english": "string",
         "partOfSpeech": "string",
-        "example": "string",
+        "example": "string (A new, level-appropriate example sentence based on the word)",
         "japanese": "string",
         "korean": "string",
         "vietnamese": "string"
@@ -87,36 +87,37 @@ Deno.serve(async (req) => {
     "references": []
   },
   "activities": [
-    { "title": "string", "description": "string (Operational classroom activity description)" }
+    { "title": "string", "description": "string" },
+    { "title": "string", "description": "string" }
   ]
 }
 `;
 
-    // Construct the Senior Teacher Persona Prompt
+    // Updated System Instruction with Strict TBCL Leveling
     const systemInstruction = `
-You are a **Senior Mandarin Teacher** with decades of teaching experience. 
-You are an expert in TBCL (Taiwan Benchmarks for the Chinese Language), CEFR, and TOCFL.
+You are a **Senior Mandarin Teacher** expert in TBCL (Taiwan Benchmarks for the Chinese Language).
 
-**Your Task:**
-Analyze the provided text file and strictly parse it into the following 5 blocks within a JSON object:
+**Task:** Analyze the provided text and output strictly valid JSON.
 
-1. **Article Content**: Extract the text content into either the 'dialogue' or 'essay' structure. For dialogue, extract speaker lines. For essays/passages, extract paragraphs.
+**CRITICAL INSTRUCTIONS:**
 
-2. **Summary**: Provide a concise summary of the key points (摘要重點) in the 'summary' field. Write in Chinese.
+1.  **Vocabulary Leveling (Strict):**
+    * You must assign a TBCL Level (1-7) to each extracted word based on the official "14452 Words List".
+    * **IF A WORD IS NOT IN THE OFFICIAL TBCL LIST** (e.g., proper nouns, slang, specialized jargon), you MUST mark the level as **"無收錄"**. Do NOT guess a number for non-listed words.
 
-3. **Vocabulary**: List key vocabulary words. 
-   **Constraint:** You must refer to the National Academy for Educational Research (NAER) system and label each word with its correct **TBCL Level (1-7)**. Use numeric values: 1, 2, 3, 4, 5, 6, or 7. If a word is outside these levels or cannot be determined, mark it as **0** (representing 'X'/unknown). Do NOT hallucinate levels.
-   Include: word, pinyin, level (number), english, partOfSpeech, example sentence in Chinese, japanese, korean, vietnamese translations.
+2.  **Example Sentences:**
+    * For every vocabulary word, generate a **NEW** example sentence (例句).
+    * The sentence must be appropriate for the word's level.
 
-4. **Grammar Points**: Extract relevant grammar patterns.
-   **Constraint:** Each grammar point must include the note "語法點僅供參考" (Grammar points are for reference only).
+3.  **Classroom Activities (Dynamic):**
+    * Create exactly **2** operational classroom activities based on the text content.
+    * **Do NOT** use the generic "Debate" or "Sales Pitch" unless specifically relevant. Create unique activities (e.g., Role Play, Jigsaw Reading, Information Gap, Interview, Survey, Ranking Task, Problem Solving) tailored to this specific lesson.
+    * **Level Fit:** Activities must be appropriate for the estimated TBCL level (e.g., Level 1-2 focuses on pairing/matching; Level 5+ focuses on debate/presentation).
+    * Provide a clear 'title' and a 'description' explaining how to conduct the activity in class.
 
-5. **Classroom Activities**: Create exactly **2** operational classroom activities (可操作的課堂活動).
-   **Constraint 1 (Level Fit):** The activities must be appropriate for the estimated TBCL level of the text. (e.g., Level 1-2 focuses on pairing/matching/picture cards; Level 3-4 focuses on role-play/gap-fill; Level 5+ focuses on debate/presentation/discussion).
-   **Constraint 2 (Variety):** Do NOT always generate the same "Debate" or "Sales" activities. Vary the types based on the text content (e.g., Role Play, Information Gap, Jigsaw Reading, Problem Solving, Interview, Survey, Ranking Task, etc.).
-   **Constraint 3 (Detail):** Provide a clear 'title' and a 'description' that explains step-by-step how to conduct the activity in class.
+4.  **Summary:** Provide a concise summary of the key points in Chinese.
 
-**Output Format:** Return strictly valid JSON matching the schema provided. No markdown, no code blocks, just pure JSON.
+**Output:** Strictly valid JSON matching the schema. No markdown, no code blocks.
 `;
 
     // Call OpenAI API with Fixed Teacher Persona

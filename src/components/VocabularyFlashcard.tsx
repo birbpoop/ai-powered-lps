@@ -42,11 +42,13 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
           style={{ backfaceVisibility: "hidden" }}
         >
           <div className={`px-3 py-1 text-xs font-medium rounded-full mb-3 ${
-            vocabulary.level >= 7 
-              ? 'bg-navy text-primary-foreground' 
-              : 'bg-secondary text-secondary-foreground'
+            vocabulary.level === "無收錄"
+              ? 'bg-muted text-muted-foreground'
+              : typeof vocabulary.level === 'number' && vocabulary.level >= 7 
+                ? 'bg-navy text-primary-foreground' 
+                : 'bg-secondary text-secondary-foreground'
           }`}>
-            TBCL Level {vocabulary.level}
+            {vocabulary.level === "無收錄" ? "無收錄" : `TBCL Level ${vocabulary.level}`}
           </div>
           
           <h3 className="font-serif text-4xl font-bold text-foreground mb-1">
@@ -81,53 +83,40 @@ const VocabularyFlashcard = ({ vocabulary }: VocabularyFlashcardProps) => {
 
         {/* Back */}
         <div
-          className="absolute inset-0 w-full h-full rounded-xl bg-card border border-border shadow-card p-5 backface-hidden overflow-y-auto"
+          className="absolute inset-0 w-full h-full rounded-xl bg-navy p-5 backface-hidden overflow-y-auto"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
-          <div className="space-y-3">
-            {/* Pinyin on back too */}
-            <div className="text-center pb-2 border-b border-border">
-              <p className="text-lg font-medium text-foreground">{vocabulary.word}</p>
-              <p className="text-sm text-muted-foreground">{vocabulary.pinyin}</p>
-            </div>
-
-            {/* Translations */}
-            <div className="space-y-2">
-              {vocabulary.english && (
-                <div className="flex gap-2">
-                  <span className="font-medium text-navy min-w-[32px] text-sm">EN</span>
-                  <span className="text-foreground text-sm">{vocabulary.english}</span>
-                </div>
-              )}
-              {vocabulary.japanese && (
-                <div className="flex gap-2">
-                  <span className="font-medium text-navy min-w-[32px] text-sm">JP</span>
-                  <span className="text-foreground text-sm">{vocabulary.japanese}</span>
-                </div>
-              )}
-              {vocabulary.korean && (
-                <div className="flex gap-2">
-                  <span className="font-medium text-navy min-w-[32px] text-sm">KR</span>
-                  <span className="text-foreground text-sm">{vocabulary.korean}</span>
-                </div>
-              )}
-              {vocabulary.vietnamese && (
-                <div className="flex gap-2">
-                  <span className="font-medium text-navy min-w-[32px] text-sm">VN</span>
-                  <span className="text-foreground text-sm">{vocabulary.vietnamese}</span>
-                </div>
+          <div className="flex flex-col h-full">
+            {/* Header with level and part of speech */}
+            <div className="flex justify-between items-start mb-2">
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                vocabulary.level === "無收錄" ? "text-muted-foreground" : "text-gold"
+              }`}>
+                {vocabulary.level === "無收錄" ? "無收錄" : `Level ${vocabulary.level}`}
+              </span>
+              {vocabulary.partOfSpeech && (
+                <span className="text-xs text-white/60">{vocabulary.partOfSpeech}</span>
               )}
             </div>
+            
+            {/* Word and English */}
+            <h3 className="text-xl font-bold text-white mb-1">{vocabulary.word}</h3>
+            <p className="text-sm text-white/80 mb-3">{vocabulary.english}</p>
+            
+            {/* Translations Grid */}
+            <div className="grid grid-cols-1 gap-1 text-xs text-white/60 mb-3 border-t border-white/10 pt-2">
+              {vocabulary.japanese && <p>JP: {vocabulary.japanese}</p>}
+              {vocabulary.korean && <p>KR: {vocabulary.korean}</p>}
+              {vocabulary.vietnamese && <p>VN: {vocabulary.vietnamese}</p>}
+            </div>
 
-            {/* Example */}
-            {vocabulary.example && (
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground mb-1 font-medium">例句</p>
-                <p className="text-sm text-foreground leading-relaxed">
-                  {vocabulary.example}
-                </p>
-              </div>
-            )}
+            {/* Dynamic Example Sentence - Always at bottom */}
+            <div className="mt-auto bg-white/10 rounded-lg p-3">
+              <p className="text-xs text-gold mb-1 font-medium">例句 Example:</p>
+              <p className="text-sm text-white leading-relaxed">
+                {vocabulary.example || "No example available."}
+              </p>
+            </div>
           </div>
         </div>
       </motion.div>
