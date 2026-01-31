@@ -193,10 +193,14 @@ const Vocabulary = () => {
               >
                 <VocabularyCard
                   word={vocab.word}
+                  pinyin={vocab.pinyin}
                   level={normalizeLevel(vocab.level) === "無" ? "無" : vocab.level}
                   english={vocab.english}
                   partOfSpeech={vocab.partOfSpeech}
                   example={vocab.example}
+                  japanese={vocab.japanese}
+                  korean={vocab.korean}
+                  vietnamese={vocab.vietnamese}
                 />
               </motion.div>
             ))}

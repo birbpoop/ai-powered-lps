@@ -32,6 +32,7 @@ interface LessonData {
     references: Reference[];
   };
   summary?: string;
+  warmUp?: string[];
   activities?: ClassroomActivity[];
   mainLevel?: string;
 }
