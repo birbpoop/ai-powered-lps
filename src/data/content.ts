@@ -26,6 +26,11 @@ export interface Reference {
   url: string;
 }
 
+export interface ActivityItem {
+  title: string;
+  description: string;
+}
+
 // 會話生詞 (Dialogue Vocabulary) - TBCL Level 5 Updated Examples
 export const dialogueVocabulary: VocabularyItem[] = [
   {
