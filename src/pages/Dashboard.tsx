@@ -87,11 +87,11 @@ const Dashboard = () => {
   // Determine default tab based on content availability
   const defaultTab = hasDialogueContent ? "conversation" : hasEssayContent ? "passage" : "conversation";
 
-  // Get all vocabulary (10 words) for Module 4
+  // Get vocabulary for display - include more dialogue words for balance
   const allVocabulary = [
-    ...lessonData.dialogue.vocabulary.slice(0, 5),
-    ...lessonData.essay.vocabulary.slice(0, 5),
-  ].slice(0, 10);
+    ...lessonData.dialogue.vocabulary,
+    ...lessonData.essay.vocabulary,
+  ];
 
   // Combined grammar
   const allGrammar = [...lessonData.dialogue.grammar.slice(0, 2), ...lessonData.essay.grammar.slice(0, 2)];
