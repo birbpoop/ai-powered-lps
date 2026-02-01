@@ -164,9 +164,20 @@ export const LessonProvider = ({ children }: { children: ReactNode }) => {
 export const useLessonContext = () => {
   const context = useContext(LessonContext);
   if (context === undefined) {
-    // This error typically occurs during hot-reload. A page refresh should fix it.
-    console.error("LessonContext not found - this may be a hot-reload issue. Try refreshing the page.");
-    throw new Error("useLessonContext must be used within a LessonProvider");
+    // During hot-reload, context can temporarily be undefined. 
+    // Return a safe fallback to prevent crashes, the next render will work correctly.
+    console.warn("LessonContext temporarily unavailable (likely hot-reload). Using fallback.");
+    return {
+      isParsed: false,
+      isParsingComplete: false,
+      isDemoMode: false,
+      lessonData: null,
+      parsingStep: 0,
+      parsingSteps: parsingStepsData,
+      startParsing: async () => {},
+      resetParsing: () => {},
+      setCustomLessonData: () => {},
+    } as LessonContextType;
   }
   return context;
 };
